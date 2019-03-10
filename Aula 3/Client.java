@@ -1,7 +1,7 @@
 /*
 Para testar: 
-java Client AsusPC obj_name register AA-11-BB MrBean
-java Client AsusPC obj_name lookup AA-11-BB
+java remote/Client AsusPC obj_name register AA-11-BB MrBean
+java remote/Client AsusPC obj_name lookup AA-11-BB
 
 AsusPC -> hostname
 */
@@ -25,8 +25,9 @@ public class Client {
         String op2;
         if(args.length==4)
             op2=null;
-        else
-            op2 = args[4];
+        else{
+            op2=args[4];
+        }
 
         try {
             Registry registry = LocateRegistry.getRegistry(hostname);
