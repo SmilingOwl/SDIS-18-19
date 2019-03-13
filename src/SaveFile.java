@@ -9,7 +9,7 @@ public class SaveFile {
     SaveFile(String file_path, int rep_degree) {
         File file = new File(file_path);
         this.rep_degree = rep_degree;
-        String unhashed_id = this.file.getName() + this.file.getParent() +  this.file.lastModified();
+        String unhashed_id = file.getName() + file.getParent() + file.lastModified();
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] encoded_hash = digest.digest(unhashed_id.getBytes(StandardCharsets.UTF_8));
@@ -29,7 +29,7 @@ public class SaveFile {
     }
 
 //TODO: this function + class Chunk
-    split_file() {
+    public void split_file() {
 
     }
 }
