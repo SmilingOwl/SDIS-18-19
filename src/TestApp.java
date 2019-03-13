@@ -1,3 +1,8 @@
+/*
+java TestApp <peer_ap> <sub_protocol> <opnd_1> <opnd_2> 
+<peer_ap> -> hostname:remote_object_name
+*/
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -10,8 +15,11 @@ public class TestApp {
             System.out.println("Error: Wrong number of arguments");
             return;
         }
-
-        String remote_object_name = args[0];
+        String[] peer_ap = args[0].split(":");
+        String hostname = peer_ap[0];
+        String remote_object_name = peer_ap[1];
+        String file_path = args[2];
+        String response;
 
         try {
             Registry registry = LocateRegistry.getRegistry(hostname);
@@ -19,54 +27,30 @@ public class TestApp {
             switch(args[1])
             {
                 case "BACKUP":
-                    checkBackup(stub, args[2], args[3]);
+                    int rep_degree = Integer.parseInt(args[3]);
+                    response = stub.backup_file(file_path, rep_degree);
                     break;
                 case "RESTORE":
-                    checkRestore(stub, args[2]);
+                    response = stub.restore_file(file_path);
                     break;
                 case "DELETE":
-                    checkDelete(stub, args[2]);
+                    response = stub.delete_file(file_path);
                     break;
                 case "RECLAIM":
-                    checkReclaim(stub, args[2]);
+                    int max_ammount = Integer.parseInt(file_path);
+                    response = stub.reclaim(max_ammount);
                     break;
                 case "STATE":
-                    checkState(stub);
+                    response = stub.state();
                     break;
                 default:
                     System.out.println("ERROR: Second argument, relative to the sub-protocol, not recognized.");
                     return;
             }
+            System.out.println(response);
         } catch (Exception e) {
             System.err.println("Client exception: " + e.toString());
             e.printStackTrace();
         }
-    }
-
-    public static int checkBackup(RemoteInterface stub, String file_path, String rep_deg) {
-        int rep_degree = Integer.parseInt(rep_deg);
-        stub.backup_file(file_path, rep_deg);
-        return 0;
-    }
-
-    public static int checkRestore(RemoteInterface stub, String file_path) {
-        stub.restore_file(file_path, rep_deg);
-        return 0;
-    }
-
-    public static int checkDelete(RemoteInterface stub, String file_path) {
-        stub.delete_file(file_path, rep_deg);
-        return 0;
-    }
-
-    public static int checkReclaim(RemoteInterface stub, String max_amm) {
-        int max_ammount = Integer.parseInt(max_amm);
-        stub.reclaim(max_ammount);
-        return 0;
-    }
-
-    public static int checkState(RemoteInterface stub) {
-        stub.state();
-        return 0;
     }
 }

@@ -1,3 +1,6 @@
+/*
+To run: java Peer mcast_addr mcast_port
+ */
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -16,20 +19,30 @@ public class Peer implements RemoteInterface{
         String remote_object_name = args[0];
 
         try {
-            Server obj = new Server();
+            Peer obj = new Peer();
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(obj, 0);
             Registry registry = LocateRegistry.getRegistry();
             registry.bind(remote_object_name, stub);
-            System.out.println("Server ready");
+            System.out.println("Peer ready");
         } catch (Exception e) {
-            System.err.println("Server exception: " + e.toString());
+            System.err.println("Peer exception: " + e.toString());
             e.printStackTrace();
         }
     }
 
-    String backup_file(String file_name, int rep_id) throws RemoteException {}
-    String restore_file(String file_name) throws RemoteException {}
-    String delete_file(String file_name) throws RemoteException {}
-    String reclaim(int max_ammount) throws RemoteException {}
-    String state() throws RemoteException {}
+    public String backup_file(String file_name, int rep_degree) throws RemoteException {
+        return "initiated backup";
+    }
+    public String restore_file(String file_name) throws RemoteException {
+        return "initiated restore";
+    }
+    public String delete_file(String file_name) throws RemoteException {
+        return "initiated delete";
+    }
+    public String reclaim(int max_ammount) throws RemoteException {
+        return "initiated reclaim";
+    }
+    public String state() throws RemoteException {
+        return "initiated state";
+    }
 }
