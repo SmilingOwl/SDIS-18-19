@@ -28,19 +28,8 @@ public class MDBThread implements Runnable {
                 mdb_socket.receive(msgPacket);
                 String data = new String(msgPacket.getData());
                 System.out.println(data);
-                this.peer.receiveMessage(data);
+                this.peer.receiveMessageMDB(data);
             }
-        } catch(IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public void sendMessage(String message) {
-        try (DatagramSocket socket = new DatagramSocket()) {
-            byte[] buf = message.getBytes();
-            DatagramPacket sendPort = new DatagramPacket(buf, buf.length, this.mdb_address, this.mdb_port);
-            socket.send(sendPort);
-            System.out.println("multicast message sent");
         } catch(IOException ex) {
             ex.printStackTrace();
         }

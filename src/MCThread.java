@@ -28,7 +28,7 @@ public class MCThread implements Runnable {
                 mc_socket.receive(msgPacket);
                 String data = new String(msgPacket.getData());
                 System.out.println(data);
-                this.peer.receiveMessage(data);
+                this.peer.receiveMessageMC(data);
             }
         } catch(IOException ex) {
             ex.printStackTrace();
