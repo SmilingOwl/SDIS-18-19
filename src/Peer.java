@@ -1,5 +1,5 @@
 /*
-To run: java Peer mcast_addr mcast_port
+To run: java Peer remote_obj_name mc_addr mc_port mdb_addr mdb_port
  */
 import java.net.*;
 import java.io.*;
@@ -11,16 +11,15 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
 public class Peer implements RemoteInterface{
-    public static void main(String[] args) {
-        if(args.length != 1) {
-            System.out.println("Error: Wrong number of arguments");
-            return;
-        }
-        String remote_object_name = args[0];
+    MCThread mc_channel;
+    MDBThread mdb_channel;
+    Peer(InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, String remote_object_name) {
 
+        this.mc_channel = new MCThread(mc_address, mc_port, this);
+        this.mdb_channel = new MDBThread(mdb_address, mdb_port, this);
+        
         try {
-            Peer obj = new Peer();
-            RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(obj, 0);
+            RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(this, 0);
             Registry registry = LocateRegistry.getRegistry();
             registry.bind(remote_object_name, stub);
             System.out.println("Peer ready");
@@ -28,9 +27,45 @@ public class Peer implements RemoteInterface{
             System.err.println("Peer exception: " + e.toString());
             e.printStackTrace();
         }
+
+        this.mc_channel.run();
+        this.mdb_channel.run();
+    }
+
+    public static void main(String[] args) {
+        if(args.length != 5) {
+            System.out.println("Error: Wrong number of arguments");
+            return;
+        }
+
+        InetAddress mc_address = null, mdb_address = null;
+
+        try {
+            mc_address = InetAddress.getByName(args[1]);
+            mdb_address = InetAddress.getByName(args[3]);
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+        if(mc_address==null)
+            System.exit(-1);
+        int mc_port = Integer.parseInt(args[2]);
+        int mdb_port = Integer.parseInt(args[4]);
+        String remote_object_name = args[0];
+
+        Peer peer = new Peer(mc_address, mc_port, mdb_address, mdb_port, remote_object_name);
+        
+    }
+
+    public void receiveMessage(String message) {
+        System.out.println("In peer: " + message);
+    }
+
+    public void sendMessageMC(String message) {
+        mc_channel.sendMessage(message);
     }
 
     public String backup_file(String file_name, int rep_degree) throws RemoteException {
+        this.sendMessageMC("Hello!!");
         return "initiated backup";
     }
     public String restore_file(String file_name) throws RemoteException {
