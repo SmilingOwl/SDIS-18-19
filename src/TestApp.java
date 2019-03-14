@@ -24,28 +24,26 @@ public class TestApp {
         try {
             Registry registry = LocateRegistry.getRegistry(hostname);
             RemoteInterface stub = (RemoteInterface) registry.lookup(remote_object_name);
-            switch(args[1])
-            {
-                case "BACKUP":
-                    int rep_degree = Integer.parseInt(args[3]);
-                    response = stub.backup_file(file_path, rep_degree);
-                    break;
-                case "RESTORE":
-                    response = stub.restore_file(file_path);
-                    break;
-                case "DELETE":
-                    response = stub.delete_file(file_path);
-                    break;
-                case "RECLAIM":
-                    int max_ammount = Integer.parseInt(file_path);
-                    response = stub.reclaim(max_ammount);
-                    break;
-                case "STATE":
-                    response = stub.state();
-                    break;
-                default:
-                    System.out.println("ERROR: Second argument, relative to the sub-protocol, not recognized.");
-                    return;
+            if(args[1].equals("BACKUP")){
+                int rep_degree = Integer.parseInt(args[3]);
+                response = stub.backup_file(file_path, rep_degree);
+
+            } else if(args[1].equals("RESTORE")){
+                response = stub.restore_file(file_path);
+
+            } else if(args[1].equals("DELETE")){
+                response = stub.delete_file(file_path);
+
+            } else if(args[1].equals("RECLAIM")){
+                int max_ammount = Integer.parseInt(file_path);
+                response = stub.reclaim(max_ammount);
+
+            } else if(args[1].equals("STATE")){
+                response = stub.state();
+                
+            } else {
+                System.out.println("ERROR: Second argument, relative to the sub-protocol, not recognized.");
+                return;
             }
             System.out.println(response);
         } catch (Exception e) {
