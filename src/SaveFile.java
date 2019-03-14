@@ -1,13 +1,20 @@
 import java.io.File;
 import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.io.FileInputStream;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+
 
 public class SaveFile {
     private String id;
     private int rep_degree;
+    private File file;
+    ArrayList<Chunk> chunks;
 
     SaveFile(String file_path, int rep_degree) {
-        File file = new File(file_path);
+        this.file = new File(file_path);
         this.rep_degree = rep_degree;
         String unhashed_id = file.getName() + file.getParent() + file.lastModified();
         try {
@@ -23,13 +30,27 @@ public class SaveFile {
         } catch(Exception e) {
             e.printStackTrace();
         }
-        System.out.println("generated id: " + this.id);
+        //System.out.println("generated id: " + this.id);
 
-        this.split_file();
-    }
-
-//TODO: this function + class Chunk
-    public void split_file() {
-
+        this.chunks = new ArrayList<>();
+        
+        byte[] buffer = new byte[Chunk.MAX_SIZE];
+        int chunk_counter = 0;
+        try {
+            FileInputStream file_is = new FileInputStream(this.file);
+            BufferedInputStream buffered_is = new BufferedInputStream(file_is);
+            while(buffered_is.read(buffer) > 0) {
+                chunk_counter++;
+                Chunk new_chunk = new Chunk(this.id, this.rep_degree, buffer, chunk_counter);
+                this.chunks.add(new_chunk);
+                buffer = new byte[Chunk.MAX_SIZE];
+            }
+            file_is.close();
+            buffered_is.close();
+        } catch(IOException ex) {
+            System.out.println("Error splitting file");
+            ex.printStackTrace();
+        }
+        //System.out.println("Number of chunks: " + this.chunks.size());
     }
 }

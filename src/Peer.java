@@ -16,6 +16,9 @@ public class Peer implements RemoteInterface{
     InetAddress mc_address;
     int mc_port;
     int id;
+    ArrayList<SaveFile> myFiles;
+    ArrayList<Chunk> myChunks;
+    
     Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, String remote_object_name) {
 
         this.id=id;
@@ -23,6 +26,8 @@ public class Peer implements RemoteInterface{
         this.mc_address = mc_address;
         this.mc_channel = new MCThread(this.mc_address, this.mc_port, this);
         this.mdb_channel = new MDBThread(mdb_address, mdb_port, this);
+        this.myFiles = new ArrayList<>();
+        this.myChunks = new ArrayList<>();
         
         try {
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(this, 0);
