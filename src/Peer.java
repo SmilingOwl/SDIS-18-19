@@ -91,7 +91,7 @@ public class Peer implements RemoteInterface{
         return "initiated backup";
     }
 
-    private void bachup_chunk() {
+    private void backup_chunk() {
         //create putchunk message
         //this.sendMessageMDB(putchunk_message);
         //int messages_received;
