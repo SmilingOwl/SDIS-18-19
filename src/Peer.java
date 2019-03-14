@@ -18,10 +18,9 @@ public class Peer implements RemoteInterface{
     int id;
     ArrayList<SaveFile> myFiles;
     ArrayList<Chunk> myChunks;
-    
-    Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, String remote_object_name) {
 
-        this.id=id;
+    Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, String remote_object_name) {
+        this.id = id;
         this.mc_port = mc_port;
         this.mc_address = mc_address;
         this.mc_channel = new MCThread(this.mc_address, this.mc_port, this);
@@ -86,13 +85,18 @@ public class Peer implements RemoteInterface{
     public String backup_file(String file_name, int rep_degree) throws RemoteException {
         MulticasterPutChunkThread send_chunk_thread = new MulticasterPutChunkThread(this.mc_address, this.mc_port, file_name);
         send_chunk_thread.run();
+        SaveFile file = new SaveFile(file_name, rep_degree);
+        this.myFiles.add(file);
+        //ciclo for para cada um dos chunks do ficheiro: bachup_chunk()
+        return "initiated backup";
+    }
+
+    private void bachup_chunk() {
         //create putchunk message
         //this.sendMessageMDB(putchunk_message);
         //int messages_received;
         //for 1 sec receive messages from mc
         //if(messages_received < rep_degree) retransmit putchunk message on MDB channel (up to 5 times)
-
-        return "initiated backup";
     }
     
     public String restore_file(String file_name) throws RemoteException {

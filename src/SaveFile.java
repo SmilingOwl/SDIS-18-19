@@ -53,4 +53,8 @@ public class SaveFile {
         }
         //System.out.println("Number of chunks: " + this.chunks.size());
     }
+
+    public ArrayList<Chunk> get_chunks() {
+        return this.chunks;
+    }
 }
