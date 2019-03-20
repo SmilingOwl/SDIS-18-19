@@ -7,6 +7,7 @@ public class MCThread implements Runnable {
     private static InetAddress mc_address;
     private static int mc_port;
     Peer peer;
+
     MCThread(InetAddress mc_address, int mc_port, Peer peer) {
         this.mc_address = mc_address;
         this.mc_port = mc_port;
@@ -20,27 +21,29 @@ public class MCThread implements Runnable {
         }
     }
 
+    @Override
     public void run(){
         try{
             while(true){
-                byte[] buf = new byte[512];
+                byte[] buf = new byte[65000];
                 DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
                 mc_socket.receive(msgPacket);
-                String data = new String(msgPacket.getData());
-                System.out.println(data);
-                this.peer.receiveMessageMC(data);
+                this.peer.receiveMessageMC(msgPacket.getData());
             }
         } catch(IOException ex) {
             ex.printStackTrace();
         }
     }
 
-    public void sendMessage(String message) {
+    public void sendMessage(byte[] buf, int random_delay) {
+        try {
+            Thread.sleep(random_delay);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
         try (DatagramSocket socket = new DatagramSocket()) {
-            byte[] buf = message.getBytes();
             DatagramPacket sendPort = new DatagramPacket(buf, buf.length, this.mc_address, this.mc_port);
             socket.send(sendPort);
-            System.out.println("multicast message sent");
         } catch(IOException ex) {
             ex.printStackTrace();
         }

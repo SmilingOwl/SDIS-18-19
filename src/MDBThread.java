@@ -19,16 +19,16 @@ public class MDBThread implements Runnable {
             ex.printStackTrace();
         }
     }
-
+    
+    @Override   
     public void run(){
         try{
             while(true){
-                byte[] buf = new byte[512];
+                byte[] buf = new byte[65000];
                 DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
                 mdb_socket.receive(msgPacket);
-                String data = new String(msgPacket.getData());
-                System.out.println(data);
-                this.peer.receiveMessageMDB(data);
+                byte[] buffer = Arrays.copyOf(buf, msgPacket.getLength());
+                this.peer.receiveMessageMDB(buffer);
             }
         } catch(IOException ex) {
             ex.printStackTrace();
