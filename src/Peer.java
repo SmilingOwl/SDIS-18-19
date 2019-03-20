@@ -10,6 +10,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class Peer implements RemoteInterface{
     private MCThread mc_channel;
@@ -19,6 +20,7 @@ public class Peer implements RemoteInterface{
     private InetAddress mdb_address;
     private int mdb_port;
     private int id;
+    private ScheduledThreadPoolExecutor thread_executor;
     private ArrayList<SaveFile> myFiles;
     private ArrayList<Chunk> myChunks;
 
@@ -32,6 +34,7 @@ public class Peer implements RemoteInterface{
         this.mdb_channel = new MDBThread(this.mdb_address, this.mdb_port, this);
         this.myFiles = new ArrayList<>();
         this.myChunks = new ArrayList<>();
+        this.thread_executor = new ScheduledThreadPoolExecutor(300);
         
         try {
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(this, 0);
@@ -47,6 +50,22 @@ public class Peer implements RemoteInterface{
 
         mdb.start();
         mc.start();
+    }
+
+    public ArrayList<SaveFile> get_files() {
+        return this.myFiles;
+    }
+
+    public ArrayList<Chunk> get_chunks() {
+        return this.myChunks;
+    }
+
+    public ScheduledThreadPoolExecutor get_thread_executor() {
+        return this.thread_executor;
+    }
+
+    public int get_id() {
+        return this.id;
     }
 
     public static void main(String[] args) {
@@ -72,47 +91,6 @@ public class Peer implements RemoteInterface{
 
         Peer peer = new Peer(peer_id, mc_address, mc_port, mdb_address, mdb_port, remote_object_name);
         
-    }
-
-    public void receiveMessageMC(byte[] message) {
-        Message m = new Message(message);
-        if(m.get_type().equals("STORED")) {
-            for(int i = 0; i < this.myFiles.size(); i++) {
-                if(this.myFiles.get(i).get_id().equals(m.get_file_id())) {
-                    this.myFiles.get(i).get_chunks().get(m.get_chunk_no()-1).increase_curr_rep_degree(m.get_sender_id());
-                    break;
-                }
-            }
-            for(int j = 0; j < this.myChunks.size(); j++) {
-                if(this.myChunks.get(j).get_file_id().equals(m.get_file_id()) && this.myChunks.get(j).get_chunk_no() == m.get_chunk_no()) {
-                    this.myChunks.get(j).increase_curr_rep_degree(m.get_sender_id());
-                    break;
-                }
-            }
-        }
-    }
-
-    public void receiveMessageMDB(byte[] message) {
-        Message m = new Message(message);
-        if(m.get_type().equals("PUTCHUNK")) {
-            boolean found_file =  false;
-            if(m.get_sender_id() != this.id) {
-                boolean found = false;
-                for(int i = 0; i < this.myChunks.size(); i++) {
-                    if(m.get_file_id().equals(this.myChunks.get(i).get_file_id()) && m.get_chunk_no() == this.myChunks.get(i).get_chunk_no())
-                        found = true;
-                }
-                if(!found) {
-                    Chunk new_chunk = new Chunk(m.get_file_id(), m.get_rep_degree(), m.get_body(), m.get_chunk_no());
-                    this.myChunks.add(new_chunk);
-                }
-                String aux = " ";
-                Message send_m = new Message("STORED", "1.0", this.id, m.get_file_id(), m.get_chunk_no(), 0, aux.getBytes());
-                Random rand = new Random();
-                int random_delay = rand.nextInt(401);
-                this.sendMessageMC(send_m.build(), random_delay);
-            }
-        }
     }
 
     public void sendMessageMC(byte[] message, int random_delay) {

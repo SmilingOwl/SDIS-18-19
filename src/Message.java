@@ -46,13 +46,13 @@ class Message {
             System.arraycopy(m, 0, m_body, 0, m.length);
             System.arraycopy(this.body, 0, m_body, m.length, this.body.length);
 
-        } else if (this.type.equals ("STORED"){
+        } else if (this.type.equals("STORED")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
             m_body = message.getBytes();
 
         }else if(this.type.equals("GETCHUNK")){
-             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
-
+            message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
+            m_body = message.getBytes();
         } else if(this.type.equals("CHUNK")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
              byte[] m = message.getBytes();
@@ -62,11 +62,11 @@ class Message {
 
         }else if(this.type.equals("DELETE")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + " \r\n\r\n";
-
-        }else(this.type.equals("REMOVED ")){
+            m_body = message.getBytes();
+        }else if(this.type.equals("REMOVED")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
-
-        }
+            m_body = message.getBytes();
+        } else return null;
         return m_body;
     }
 

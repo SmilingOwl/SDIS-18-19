@@ -28,7 +28,7 @@ public class MCThread implements Runnable {
                 byte[] buf = new byte[65000];
                 DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
                 mc_socket.receive(msgPacket);
-                this.peer.receiveMessageMC(msgPacket.getData());
+                this.peer.get_thread_executor().execute(new ReceiveMessageMC(msgPacket.getData(), this.peer));
             }
         } catch(IOException ex) {
             ex.printStackTrace();
