@@ -6,17 +6,16 @@ public class ReceiveMessageMDB implements Runnable {
     public ReceiveMessageMDB(byte[] message, Peer peer) {
         this.peer = peer;
         this.message = new Message(message);
-        if(m.get_type().equals("PUTCHUNK")) {
-            boolean found_file =  false;
-            if(m.get_sender_id() != this.id) {
+        if(this.message.get_type().equals("PUTCHUNK")) {
+            if(this.message.get_sender_id() != peer.get_id()) {
                 boolean found = false;
-                for(int i = 0; i < this.myChunks.size(); i++) {
-                    if(m.get_file_id().equals(peer.get_chunks().get(i).get_file_id()) && m.get_chunk_no() 
+                for(int i = 0; i < peer.get_chunks().size(); i++) {
+                    if(this.message.get_file_id().equals(peer.get_chunks().get(i).get_file_id()) && this.message.get_chunk_no() 
                                                     == peer.get_chunks().get(i).get_chunk_no())
                         found = true;
                 }
                 if(!found) {
-                    Chunk new_chunk = new Chunk(m.get_file_id(), m.get_rep_degree(), m.get_body(), m.get_chunk_no());
+                    Chunk new_chunk = new Chunk(this.message.get_file_id(), this.message.get_rep_degree(), this.message.get_body(), this.message.get_chunk_no());
                     peer.get_chunks().add(new_chunk);
                 }
             }
@@ -24,26 +23,9 @@ public class ReceiveMessageMDB implements Runnable {
     }
 
     public void run() {
-        Message m = new Message(this.message);
-        if(m.get_type().equals("PUTCHUNK")) {
-            boolean found_file =  false;
-            if(m.get_sender_id() != this.id) {
-                boolean found = false;
-                for(int i = 0; i < this.myChunks.size(); i++) {
-                    if(m.get_file_id().equals(peer.get_chunks().get(i).get_file_id()) && m.get_chunk_no() 
-                                                    == peer.get_chunks().get(i).get_chunk_no())
-                        found = true;
-                }
-                if(!found) {
-                    Chunk new_chunk = new Chunk(m.get_file_id(), m.get_rep_degree(), m.get_body(), m.get_chunk_no());
-                    peer.get_chunks().add(new_chunk);
-                }
-                String aux = " ";
-                Message send_m = new Message("STORED", "1.0", peer.get_id(), m.get_file_id(), m.get_chunk_no(), 0, aux.getBytes());
-                Random rand = new Random();
-                int random_delay = rand.nextInt(401);
-                peer.sendMessageMC(send_m.build(), random_delay);
-            }
-        }
+        String aux = " ";
+        Message send_m = new Message("STORED", "1.0", peer.get_id(), this.message.get_file_id(), 
+                                                this.message.get_chunk_no(), 0, aux.getBytes());
+        peer.sendMessageMC(send_m.build());
     }
 }

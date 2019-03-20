@@ -35,12 +35,7 @@ public class MCThread implements Runnable {
         }
     }
 
-    public void sendMessage(byte[] buf, int random_delay) {
-        try {
-            Thread.sleep(random_delay);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    public void sendMessage(byte[] buf) {
         try (DatagramSocket socket = new DatagramSocket()) {
             DatagramPacket sendPort = new DatagramPacket(buf, buf.length, this.mc_address, this.mc_port);
             socket.send(sendPort);

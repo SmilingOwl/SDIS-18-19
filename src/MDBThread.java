@@ -1,6 +1,8 @@
 import java.net.*;
 import java.io.*;
-import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.Random;
+import java.util.Arrays;
 
 public class MDBThread implements Runnable {
     MulticastSocket mdb_socket;
@@ -28,7 +30,9 @@ public class MDBThread implements Runnable {
                 DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
                 mdb_socket.receive(msgPacket);
                 byte[] buffer = Arrays.copyOf(buf, msgPacket.getLength());
-                this.peer.receiveMessageMDB(buffer);
+                Random rand = new Random();
+                int random_delay = rand.nextInt(401);
+                this.peer.get_thread_executor().schedule(new ReceiveMessageMDB(buffer, this.peer), random_delay, TimeUnit.MILLISECONDS);
             }
         } catch(IOException ex) {
             ex.printStackTrace();

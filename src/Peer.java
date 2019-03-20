@@ -93,8 +93,8 @@ public class Peer implements RemoteInterface{
         
     }
 
-    public void sendMessageMC(byte[] message, int random_delay) {
-        mc_channel.sendMessage(message, random_delay);
+    public void sendMessageMC(byte[] message) {
+        mc_channel.sendMessage(message);
     }
 
     public String backup_file(String file_name, int rep_degree) throws RemoteException {
