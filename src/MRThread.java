@@ -1,6 +1,8 @@
 import java.net.*;
 import java.io.*;
-import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.Random;
+import java.util.Arrays;
 
 public class MRThread implements Runnable {
     MulticastSocket mc_socket;
@@ -36,11 +38,6 @@ public class MRThread implements Runnable {
     }
 
     public void sendMessage(byte[] buf, int random_delay) {
-        try {
-            Thread.sleep(random_delay);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
         try (DatagramSocket socket = new DatagramSocket()) {
             DatagramPacket sendPort = new DatagramPacket(buf, buf.length, this.mc_address, this.mc_port);
             socket.send(sendPort);
