@@ -4,8 +4,8 @@ import java.util.*;
 
 public class MCThread implements Runnable {
     MulticastSocket mc_socket;
-    private static InetAddress mc_address;
-    private static int mc_port;
+    private InetAddress mc_address;
+    private int mc_port;
     Peer peer;
 
     MCThread(InetAddress mc_address, int mc_port, Peer peer) {

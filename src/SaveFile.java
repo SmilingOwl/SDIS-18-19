@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.io.FileInputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.FileOutputStream;
 
 
 public class SaveFile {
@@ -52,6 +53,20 @@ public class SaveFile {
             buffered_is.close();
         } catch(IOException ex) {
             System.out.println("Error splitting file");
+            ex.printStackTrace();
+        }
+    }
+
+    SaveFile(String file_name, ArrayList<Chunk> chunks) {
+        try {
+            File file = new File(file_name);
+            file.createNewFile();            
+            FileOutputStream fos = new FileOutputStream(file_name);
+            for(int i = 0; i < chunks.size(); i++) {
+                fos.write(chunks.get(i).get_body());
+            }
+            fos.close();
+        } catch(Exception ex) {
             ex.printStackTrace();
         }
     }

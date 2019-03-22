@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public class ReceiveMessageMC implements Runnable {
     private Peer peer;
     private byte[] message;
@@ -9,16 +11,23 @@ public class ReceiveMessageMC implements Runnable {
     public void run() {
         Message m = new Message(this.message);
         if(m.get_type().equals("STORED")) {
-            for(int i = 0; i < peer.get_files().size(); i++) {
-                if(peer.get_files().get(i).get_id().equals(m.get_file_id())) {
-                    peer.get_files().get(i).get_chunks().get(m.get_chunk_no()-1).increase_curr_rep_degree(m.get_sender_id());
-                    break;
+            String key = m.get_file_id() + ":" + m.get_chunk_no();
+            if(this.peer.get_chunk_occurrences().get(key) != null) {
+                ArrayList<Integer> senders = this.peer.get_chunk_occurrences().get(key);
+                if(!senders.contains(m.get_sender_id())) {
+                    senders.add(m.get_sender_id());
                 }
             }
-            for(int j = 0; j < peer.get_chunks().size(); j++) {
-                if(peer.get_chunks().get(j).get_file_id().equals(m.get_file_id()) && peer.get_chunks().get(j).get_chunk_no() == m.get_chunk_no()) {
-                    peer.get_chunks().get(j).increase_curr_rep_degree(m.get_sender_id());
-                    break;
+            else {
+                ArrayList<Integer> senders = new ArrayList<>();
+                senders.add(m.get_sender_id());
+                this.peer.get_chunk_occurrences().put(key, senders);
+            }
+        } else if(m.get_type().equals("GETCHUNK")) {
+            for(int i = 0; i < this.peer.get_chunks().size(); i++) {
+                if(this.peer.get_chunks().get(i).get_file_id().equals(m.get_file_id()) 
+                        && this.peer.get_chunks().get(i).get_chunk_no() == m.get_chunk_no()) {
+                    //has chunk
                 }
             }
         }

@@ -2,29 +2,36 @@
 To run: java Peer peer_id remote_obj_name mc_addr mc_port mdb_addr mdb_port
 java Peer 1 obj 224.0.0.3 1111 224.0.0.3 2222
  */
-import java.net.*;
-import java.io.*;
-import java.util.*;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.io.File;
+import java.net.InetAddress;
 
 public class Peer implements RemoteInterface{
     private MCThread mc_channel;
     private MDBThread mdb_channel;
+    private MRThread mdr_channel;
     private InetAddress mc_address;
     private int mc_port;
     private InetAddress mdb_address;
     private int mdb_port;
+    private InetAddress mdr_address;
+    private int mdr_port;
     private int id;
     private ScheduledThreadPoolExecutor thread_executor;
-    private ArrayList<SaveFile> myFiles;
+    private ConcurrentHashMap<String, String> myFiles;
+    private ConcurrentHashMap<String, Integer> files_size;
+    private ConcurrentHashMap<String, ArrayList<Integer>> chunk_occurrences;
     private ArrayList<Chunk> myChunks;
 
-    Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, String remote_object_name) {
+    Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
+                                int mdr_port, String remote_object_name) {
         this.id = id;
         this.mc_port = mc_port;
         this.mc_address = mc_address;
@@ -32,8 +39,13 @@ public class Peer implements RemoteInterface{
         this.mdb_port = mdb_port;
         this.mdb_address = mdb_address;
         this.mdb_channel = new MDBThread(this.mdb_address, this.mdb_port, this);
-        this.myFiles = new ArrayList<>();
+        this.mdr_port = mdr_port;
+        this.mdr_address = mdr_address;
+        this.mdr_channel = new MRThread(this.mdr_address, this.mdr_port, this);
         this.myChunks = new ArrayList<>();
+        this.myFiles = new ConcurrentHashMap<String, String>();
+        this.files_size = new ConcurrentHashMap<String, Integer>();
+        this.chunk_occurrences = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
         
         try {
@@ -47,13 +59,11 @@ public class Peer implements RemoteInterface{
         }
         Thread mdb = new Thread(this.mdb_channel);
         Thread mc = new Thread(this.mc_channel);
+        Thread mdr = new Thread(this.mdr_channel);
 
         mdb.start();
         mc.start();
-    }
-
-    public ArrayList<SaveFile> get_files() {
-        return this.myFiles;
+        mdr.start();
     }
 
     public ArrayList<Chunk> get_chunks() {
@@ -69,16 +79,17 @@ public class Peer implements RemoteInterface{
     }
 
     public static void main(String[] args) {
-        if(args.length != 6) {
+        if(args.length != 8) {
             System.out.println("Error: Wrong number of arguments");
             return;
         }
 
-        InetAddress mc_address = null, mdb_address = null;
+        InetAddress mc_address = null, mdb_address = null, mdr_address = null;
 
         try {
             mc_address = InetAddress.getByName(args[2]);
             mdb_address = InetAddress.getByName(args[4]);
+            mdr_address = InetAddress.getByName(args[6]);
         } catch(Exception ex) {
             ex.printStackTrace();
         }
@@ -86,11 +97,15 @@ public class Peer implements RemoteInterface{
             System.exit(-1);
         int mc_port = Integer.parseInt(args[3]);
         int mdb_port = Integer.parseInt(args[5]);
+        int mdr_port = Integer.parseInt(args[7]);
         String remote_object_name = args[1];
         int peer_id = Integer.parseInt(args[0]);
 
-        Peer peer = new Peer(peer_id, mc_address, mc_port, mdb_address, mdb_port, remote_object_name);
-        
+        Peer peer = new Peer(peer_id, mc_address, mc_port, mdb_address, mdb_port, mdr_address, mdr_port, remote_object_name);
+    }
+
+    public ConcurrentHashMap<String, ArrayList<Integer>> get_chunk_occurrences() {
+        return this.chunk_occurrences;
     }
 
     public void sendMessageMC(byte[] message) {
@@ -99,12 +114,13 @@ public class Peer implements RemoteInterface{
 
     public String backup_file(String file_name, int rep_degree) throws RemoteException {
         SaveFile file = new SaveFile(file_name, rep_degree);
-        this.myFiles.add(file);
+        this.myFiles.put(file_name, file.get_id());
+        this.files_size.put(file.get_id(), file.get_chunks().size());
         ArrayList<Chunk> chunks_to_send = file.get_chunks();
         for(int i  = 0; i < chunks_to_send.size(); i++) {
             this.backup_chunk(chunks_to_send.get(i));
         }
-        return "backup done";
+        return "Backup executed successfully";
     }
 
     private void backup_chunk(Chunk chunk) {
@@ -114,18 +130,13 @@ public class Peer implements RemoteInterface{
     }
     
     public String restore_file(String file_name) throws RemoteException {
-        System.out.println("---------FOR TESTING BACK UP PURPOSES ONLY -> NOT YET DONE---------");
-        try {
-            File file = new File("a.pdf");
-            file.createNewFile();            
-            FileOutputStream fos = new FileOutputStream("a.pdf");
-            for(int i = 0; i < myChunks.size(); i++) {
-                fos.write(myChunks.get(i).get_body());
-            }
-            fos.close();
-        } catch(Exception ex) {
-            ex.printStackTrace();
-        }
+        ArrayList<Chunk> chunks_to_save = new ArrayList<>();
+        String file_id = this.myFiles.get(file_name);
+        int number_of_chunks = this.files_size.get(file_id);
+        if(file_id == null)
+            return "File not found";
+        //run protocol and save chunks in chunks_to_save
+        SaveFile new_file = new SaveFile(file_name, chunks_to_save);
         return "initiated restore";
     }
     public String delete_file(String file_name) throws RemoteException {

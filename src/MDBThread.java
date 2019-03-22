@@ -6,8 +6,8 @@ import java.util.Arrays;
 
 public class MDBThread implements Runnable {
     MulticastSocket mdb_socket;
-    private static InetAddress mdb_address;
-    private static int mdb_port;
+    private InetAddress mdb_address;
+    private int mdb_port;
     Peer peer;
     MDBThread(InetAddress mdb_address, int mdb_port, Peer peer) {
         this.mdb_address = mdb_address;

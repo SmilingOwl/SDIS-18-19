@@ -3,7 +3,6 @@ import java.io.*;
 import java.util.*;
 
 public class MulticasterPutChunkThread implements Runnable {
-    MulticastSocket mc_socket;
     private InetAddress mc_address;
     private int mc_port;
     private byte[] message;
@@ -13,7 +12,6 @@ public class MulticasterPutChunkThread implements Runnable {
     MulticasterPutChunkThread(InetAddress mc_address, int mc_port, byte[] message, Chunk chunk) {
         this.mc_address = mc_address;
         this.mc_port = mc_port;
-        this.mc_socket = mc_socket;
         this.message = message;
         this.sent_messages_no = 0;
         this.chunk = chunk;

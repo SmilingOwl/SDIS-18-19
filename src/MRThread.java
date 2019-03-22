@@ -5,42 +5,36 @@ import java.util.Random;
 import java.util.Arrays;
 
 public class MRThread implements Runnable {
-    MulticastSocket mc_socket;
-    private static InetAddress mc_address;
-    private static int mc_port;
+    MulticastSocket mdr_socket;
+    private InetAddress mdr_address;
+    private int mdr_port;
     Peer peer;
 
-    MRThread(InetAddress mc_address, int mc_port, Peer peer) {
-        this.mc_address = mc_address;
-        this.mc_port = mc_port;
-        this.mc_socket = mc_socket;
+    MRThread(InetAddress mdr_address, int mdr_port, Peer peer) {
+        this.mdr_address = mdr_address;
+        this.mdr_port = mdr_port;
+        this.mdr_socket = mdr_socket;
         this.peer = peer;
         try {
-            this.mc_socket = new MulticastSocket(this.mc_port);
-            this.mc_socket.joinGroup(this.mc_address);
+            this.mdr_socket = new MulticastSocket(this.mdr_port);
+            this.mdr_socket.joinGroup(this.mdr_address);
         } catch(IOException ex) {
             ex.printStackTrace();
         }
     }
 
-    @Override
+    @Override   
     public void run(){
         try{
             while(true){
                 byte[] buf = new byte[65000];
                 DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
-                mc_socket.receive(msgPacket);
-                this.peer.get_thread_executor().execute(new ReceiveMessageMC(msgPacket.getData(), this.peer));
+                mdr_socket.receive(msgPacket);
+                byte[] buffer = Arrays.copyOf(buf, msgPacket.getLength());
+                Random rand = new Random();
+                int random_delay = rand.nextInt(401);
+                this.peer.get_thread_executor().execute(new ReceiveMessageMDR(buffer, this.peer));
             }
-        } catch(IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public void sendMessage(byte[] buf, int random_delay) {
-        try (DatagramSocket socket = new DatagramSocket()) {
-            DatagramPacket sendPort = new DatagramPacket(buf, buf.length, this.mc_address, this.mc_port);
-            socket.send(sendPort);
         } catch(IOException ex) {
             ex.printStackTrace();
         }
