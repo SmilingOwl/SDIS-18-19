@@ -77,7 +77,6 @@ class Message {
         for(int i = 0; i < message.length-4; i++) {
             if(message[i] == 0xD && message[i+1] == 0xA && message[i+2] == 0xD && message[i+3] == 0xA) {
                 this.body = Arrays.copyOfRange(message, i + 4, message.length);
-                byte[] header = Arrays.copyOfRange(message, 0, i + 4);
                 break;
             }
         }

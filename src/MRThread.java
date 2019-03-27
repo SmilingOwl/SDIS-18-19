@@ -1,7 +1,5 @@
 import java.net.*;
 import java.io.*;
-import java.util.concurrent.TimeUnit;
-import java.util.Random;
 import java.util.Arrays;
 
 public class MRThread implements Runnable {
@@ -13,7 +11,6 @@ public class MRThread implements Runnable {
     MRThread(InetAddress mdr_address, int mdr_port, Peer peer) {
         this.mdr_address = mdr_address;
         this.mdr_port = mdr_port;
-        this.mdr_socket = mdr_socket;
         this.peer = peer;
         try {
             this.mdr_socket = new MulticastSocket(this.mdr_port);
@@ -31,8 +28,6 @@ public class MRThread implements Runnable {
                 DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
                 mdr_socket.receive(msgPacket);
                 byte[] buffer = Arrays.copyOf(buf, msgPacket.getLength());
-                Random rand = new Random();
-                int random_delay = rand.nextInt(401);
                 this.peer.get_thread_executor().execute(new ReceiveMessageMDR(buffer, this.peer));
             }
         } catch(IOException ex) {

@@ -169,6 +169,7 @@ public class Peer implements RemoteInterface{
         //return "initiated restore";
     }
     public String delete_file(String file_name) throws RemoteException {
+       
         String file_id = this.myFiles.get(file_name);
         int number_of_chunks = this.files_size.get(file_id);
        

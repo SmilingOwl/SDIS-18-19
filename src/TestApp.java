@@ -3,9 +3,6 @@ java TestApp <peer_ap> <sub_protocol> <opnd_1> <opnd_2>
 <peer_ap> -> hostname:remote_object_name
 */
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
