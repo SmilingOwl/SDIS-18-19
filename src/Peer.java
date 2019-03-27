@@ -169,8 +169,19 @@ public class Peer implements RemoteInterface{
         //return "initiated restore";
     }
     public String delete_file(String file_name) throws RemoteException {
+        String file_id = this.myFiles.get(file_name);
+        int number_of_chunks = this.files_size.get(file_id);
+       
+        if(file_id == null)
+            return "File not found";
+        
+        for(int i=0; i< number_of_chunks; i++){
+            Message to_send = new Message("DELETE", "1.0", this.id, file_id, 0, 0, null);
+            this.sendMessageMC(to_send.build());
+        }
         return "initiated delete";
     }
+
     public String reclaim(int max_ammount) throws RemoteException {
         return "initiated reclaim";
     }

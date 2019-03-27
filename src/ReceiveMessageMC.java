@@ -35,8 +35,7 @@ public class ReceiveMessageMC implements Runnable {
             for(int i = 0; i < this.peer.get_chunks().size(); i++) {
                 if(this.peer.get_chunks().get(i).get_file_id().equals(m.get_file_id()) 
                         && this.peer.get_chunks().get(i).get_chunk_no() == m.get_chunk_no()) {
-                    Message new_m = new Message("CHUNK", "1.0", this.peer.get_id(), m.get_file_id(),
-                        m.get_chunk_no(), null, this.peer.get_chunks().get(i).get_body());
+                    Message new_m = new Message("CHUNK", "1.0", this.peer.get_id(), m.get_file_id(), m.get_chunk_no(), 0, this.peer.get_chunks().get(i).get_body());
                     Random rand = new Random();
                     int random_delay = rand.nextInt(401);
                     this.peer.get_thread_executor().schedule(
@@ -46,6 +45,9 @@ public class ReceiveMessageMC implements Runnable {
                         break;
                 }
             }
+        }else if(m.get_type().equals("DELETE")){
+            
         }
+
     }
 }

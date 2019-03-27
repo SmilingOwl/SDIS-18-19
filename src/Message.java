@@ -38,6 +38,7 @@ class Message {
     public byte[] build() {
         String message;
         byte[] m_body;
+
         if (this.type.equals("PUTCHUNK")) {
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " " 
                 + this.rep_degree + " \r\n\r\n";
@@ -53,9 +54,10 @@ class Message {
         }else if(this.type.equals("GETCHUNK")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
             m_body = message.getBytes();
+
         } else if(this.type.equals("CHUNK")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
-             byte[] m = message.getBytes();
+            byte[] m = message.getBytes();
             m_body = new byte[m.length + body.length];
             System.arraycopy(m, 0, m_body, 0, m.length);
             System.arraycopy(this.body, 0, m_body, m.length, this.body.length);
@@ -63,6 +65,7 @@ class Message {
         }else if(this.type.equals("DELETE")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + " \r\n\r\n";
             m_body = message.getBytes();
+
         }else if(this.type.equals("REMOVED")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
             m_body = message.getBytes();
