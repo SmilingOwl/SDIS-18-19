@@ -1,6 +1,5 @@
 import java.net.*;
 import java.io.*;
-import java.util.*;
 
 public class MulticasterPutChunkThread implements Runnable {
     private InetAddress mc_address;

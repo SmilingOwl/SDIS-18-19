@@ -12,7 +12,6 @@ public class MDBThread implements Runnable {
     MDBThread(InetAddress mdb_address, int mdb_port, Peer peer) {
         this.mdb_address = mdb_address;
         this.mdb_port = mdb_port;
-        this.mdb_socket = mdb_socket;
         this.peer = peer;
         try {
             this.mdb_socket = new MulticastSocket(this.mdb_port);

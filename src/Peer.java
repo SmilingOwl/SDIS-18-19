@@ -31,6 +31,7 @@ public class Peer implements RemoteInterface{
     private ConcurrentHashMap<String, Integer> files_size;
     private ConcurrentHashMap<String, ArrayList<Integer>> chunk_occurrences;
     private ArrayList<Chunk> myChunks;
+    private int maxFreeSpace = 1000000000;
 
     Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
                                 int mdr_port, String remote_object_name) {
@@ -72,6 +73,14 @@ public class Peer implements RemoteInterface{
 
     public InetAddress get_mdr_address() {
         return this.mdr_address;
+    }
+
+    public int get_occupied_space(){
+        int occupied_space=0;
+        for(int i=0; i< myChunks.size(); i++){
+            occupied_space += myChunks.get(i).get_body().length;
+        }
+        return occupied_space;
     }
 
     public int get_mdr_port() {
@@ -169,9 +178,26 @@ public class Peer implements RemoteInterface{
         //return "initiated restore";
     }
     public String delete_file(String file_name) throws RemoteException {
+       
+        String file_id = this.myFiles.get(file_name);
+        int number_of_chunks = this.files_size.get(file_id);
+       
+        if(file_id == null)
+            return "File not found";
+        
+        for(int i=0; i< number_of_chunks; i++){
+            Message to_send = new Message("DELETE", "1.0", this.id, file_id, 0, 0, null);
+            this.sendMessageMC(to_send.build());
+        }
         return "initiated delete";
     }
+
     public String reclaim(int max_ammount) throws RemoteException {
+        int free_space= get_occupied_space()-max_ammount;
+
+        if(free_space > 0){
+            
+        }
         return "initiated reclaim";
     }
     public String state() throws RemoteException {

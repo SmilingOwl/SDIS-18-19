@@ -6,7 +6,6 @@ public class Chunk implements Comparable<Chunk> {
     private byte[] body;
     private int current_rep_degree;
     private int rep_degree;
-    private int occurrences;
     private ArrayList<Integer> senders_who_stored;
 
     public static final int MAX_SIZE = 64000;
