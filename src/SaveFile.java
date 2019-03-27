@@ -3,6 +3,7 @@ import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.io.FileInputStream;
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -13,6 +14,8 @@ public class SaveFile {
     private String id;
     private int rep_degree;
     private File file;
+    private String file_name;
+    private int number_of_chunks;
     private ArrayList<Chunk> chunks;
 
     SaveFile(String file_path, int rep_degree) {
@@ -57,11 +60,32 @@ public class SaveFile {
         }
     }
 
-    SaveFile(String file_name, ArrayList<Chunk> chunks) {
+    SaveFile(String file_name, int number_of_chunks, boolean aux) {
+        this.file_name = file_name;
         try {
-            File file = new File(file_name);
+            File file = new File(this.file_name);
             file.createNewFile();            
-            FileOutputStream fos = new FileOutputStream(file_name);
+            /*FileOutputStream fos = new FileOutputStream(file_name);
+            for(int i = 0; i < chunks.size(); i++) {
+                fos.write(chunks.get(i).get_body());
+            }
+            fos.close();*/
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void add_chunk(byte[] chunk, int chunk_no) {
+        Chunk new_chunk = new Chunk(this.id, 0, chunk, chunk_no);
+        this.chunks.add(new_chunk);
+        if(this.chunks.size() == this.number_of_chunks) 
+            add_to_file();
+    }
+
+    public void add_to_file() {
+        Collections.sort(chunks);
+        try {
+            FileOutputStream fos = new FileOutputStream(this.file_name);
             for(int i = 0; i < chunks.size(); i++) {
                 fos.write(chunks.get(i).get_body());
             }

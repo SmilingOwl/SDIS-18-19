@@ -26,6 +26,8 @@ public class Peer implements RemoteInterface{
     private int id;
     private ScheduledThreadPoolExecutor thread_executor;
     private ConcurrentHashMap<String, String> myFiles;
+    private ConcurrentHashMap<String, SaveFile> myFilesToRestore;
+    private ArrayList<String> myChunksNotToSend;
     private ConcurrentHashMap<String, Integer> files_size;
     private ConcurrentHashMap<String, ArrayList<Integer>> chunk_occurrences;
     private ArrayList<Chunk> myChunks;
@@ -44,6 +46,8 @@ public class Peer implements RemoteInterface{
         this.mdr_channel = new MRThread(this.mdr_address, this.mdr_port, this);
         this.myChunks = new ArrayList<>();
         this.myFiles = new ConcurrentHashMap<String, String>();
+        this.myFilesToRestore = new ConcurrentHashMap<String, SaveFile>();
+        this.myChunksNotToSend = new ArrayList<String>();
         this.files_size = new ConcurrentHashMap<String, Integer>();
         this.chunk_occurrences = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
@@ -66,6 +70,14 @@ public class Peer implements RemoteInterface{
         mdr.start();
     }
 
+    public InetAddress get_mdr_address() {
+        return this.mdr_address;
+    }
+
+    public int get_mdr_port() {
+        return this.mdr_port;
+    }
+
     public ArrayList<Chunk> get_chunks() {
         return this.myChunks;
     }
@@ -76,6 +88,14 @@ public class Peer implements RemoteInterface{
 
     public int get_id() {
         return this.id;
+    }
+
+    public void add_chunk_not_to_send(String file_id, int chunk_no) {
+        this.myChunksNotToSend.add(file_id + ":" + chunk_no);
+    }
+
+    public ArrayList<String> get_myChunksNotToSend() {
+        return this.myChunksNotToSend;
     }
 
     public static void main(String[] args) {
@@ -108,6 +128,10 @@ public class Peer implements RemoteInterface{
         return this.chunk_occurrences;
     }
 
+    public ConcurrentHashMap<String, SaveFile> get_myFilesToRestore() {
+        return this.myFilesToRestore;
+    }
+
     public void sendMessageMC(byte[] message) {
         mc_channel.sendMessage(message);
     }
@@ -130,14 +154,19 @@ public class Peer implements RemoteInterface{
     }
     
     public String restore_file(String file_name) throws RemoteException {
-        ArrayList<Chunk> chunks_to_save = new ArrayList<>();
         String file_id = this.myFiles.get(file_name);
         int number_of_chunks = this.files_size.get(file_id);
         if(file_id == null)
             return "File not found";
+        SaveFile new_file = new SaveFile(file_name, number_of_chunks, true);
+        this.myFilesToRestore.put(file_id, new_file);
         //run protocol and save chunks in chunks_to_save
-        SaveFile new_file = new SaveFile(file_name, chunks_to_save);
-        return "initiated restore";
+        for(int i = 0; i < number_of_chunks; i++) {
+            Message to_send = new Message("GETCHUNK", "1.0", this.id, file_id, i, 0, null);
+            this.sendMessageMC(to_send.build());
+        }
+        while(true) {}
+        //return "initiated restore";
     }
     public String delete_file(String file_name) throws RemoteException {
         return "initiated delete";

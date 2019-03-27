@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public class ReceiveMessageMC implements Runnable {
     private Peer peer;
@@ -14,7 +16,13 @@ public class ReceiveMessageMC implements Runnable {
             String key = m.get_file_id() + ":" + m.get_chunk_no();
             if(this.peer.get_chunk_occurrences().get(key) != null) {
                 ArrayList<Integer> senders = this.peer.get_chunk_occurrences().get(key);
-                if(!senders.contains(m.get_sender_id())) {
+                boolean found = false;
+                for(int i = 0; i < senders.size(); i++) {
+                    if(senders.get(i) == m.get_sender_id()) {
+                        found = true;
+                    }
+                }
+                if(!found) {
                     senders.add(m.get_sender_id());
                 }
             }
@@ -27,7 +35,15 @@ public class ReceiveMessageMC implements Runnable {
             for(int i = 0; i < this.peer.get_chunks().size(); i++) {
                 if(this.peer.get_chunks().get(i).get_file_id().equals(m.get_file_id()) 
                         && this.peer.get_chunks().get(i).get_chunk_no() == m.get_chunk_no()) {
-                    //has chunk
+                    Message new_m = new Message("CHUNK", "1.0", this.peer.get_id(), m.get_file_id(),
+                        m.get_chunk_no(), null, this.peer.get_chunks().get(i).get_body());
+                    Random rand = new Random();
+                    int random_delay = rand.nextInt(401);
+                    this.peer.get_thread_executor().schedule(
+                        new MulticasterChunkThread(this.peer.get_mdr_address(), this.peer.get_mdr_port(), this.peer,
+                            new_m.build(), m.get_file_id(), m.get_chunk_no()), 
+                        random_delay, TimeUnit.MILLISECONDS);
+                        break;
                 }
             }
         }

@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 
-public class Chunk {
+public class Chunk implements Comparable<Chunk> {
     private String file_id;
     private int chunk_number;
     private byte[] body;
@@ -52,5 +52,10 @@ public class Chunk {
 
     public int get_chunk_no() {
         return this.chunk_number;
+    }
+
+    @Override
+    public int compareTo(Chunk c) {
+        return this.get_chunk_no() - c.get_chunk_no();
     }
 }
