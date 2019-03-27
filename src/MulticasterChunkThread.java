@@ -22,11 +22,13 @@ public class MulticasterChunkThread implements Runnable {
     @Override
     public void run(){
         ArrayList<String> chunks_not_to_send = this.peer.get_myChunksNotToSend();
+        System.out.println("Sending chunk message!");
         for(int i = 0; i < chunks_not_to_send.size(); i++) {
             if(chunks_not_to_send.get(i).equals(this.file_id + ":" + this.chunk_no)) {
                 return;
             }
         }
+        System.out.println("Sending chunk message! part2");
         try (DatagramSocket socket = new DatagramSocket()) {
             DatagramPacket sendPort = new DatagramPacket(this.message, this.message.length, this.mdr_address, this.mdr_port);
             socket.send(sendPort);

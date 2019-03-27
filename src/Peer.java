@@ -71,16 +71,16 @@ public class Peer implements RemoteInterface{
         mdr.start();
     }
 
-    public InetAddress get_mdr_address() {
-        return this.mdr_address;
-    }
-
     public int get_occupied_space(){
         int occupied_space=0;
         for(int i=0; i< myChunks.size(); i++){
             occupied_space += myChunks.get(i).get_body().length;
         }
         return occupied_space;
+    }
+
+    public InetAddress get_mdr_address() {
+        return this.mdr_address;
     }
 
     public int get_mdr_port() {
@@ -158,7 +158,8 @@ public class Peer implements RemoteInterface{
 
     private void backup_chunk(Chunk chunk) {
         Message message = new Message("PUTCHUNK", "1.0", this.id, chunk.get_file_id(), chunk.get_chunk_no(), chunk.get_rep_degree(), chunk.get_body());
-        MulticasterPutChunkThread send_chunk_thread = new MulticasterPutChunkThread(this.mdb_address, this.mdb_port, message.build(), chunk);
+        MulticasterPutChunkThread send_chunk_thread = 
+            new MulticasterPutChunkThread(this.mdb_address, this.mdb_port, message.build(), chunk, this);
         send_chunk_thread.run();
     }
     
@@ -167,18 +168,16 @@ public class Peer implements RemoteInterface{
         int number_of_chunks = this.files_size.get(file_id);
         if(file_id == null)
             return "File not found";
-        SaveFile new_file = new SaveFile(file_name, number_of_chunks, true);
+        SaveFile new_file = new SaveFile(file_name, number_of_chunks, this);
         this.myFilesToRestore.put(file_id, new_file);
         //run protocol and save chunks in chunks_to_save
         for(int i = 0; i < number_of_chunks; i++) {
-            Message to_send = new Message("GETCHUNK", "1.0", this.id, file_id, i, 0, null);
+            Message to_send = new Message("GETCHUNK", "1.0", this.id, file_id, i+1, 0, null);
             this.sendMessageMC(to_send.build());
         }
-        while(true) {}
-        //return "initiated restore";
+        return "initiated restore";
     }
     public String delete_file(String file_name) throws RemoteException {
-       
         String file_id = this.myFiles.get(file_name);
         int number_of_chunks = this.files_size.get(file_id);
        
@@ -191,7 +190,6 @@ public class Peer implements RemoteInterface{
         }
         return "initiated delete";
     }
-
     public String reclaim(int max_ammount) throws RemoteException {
         int free_space= get_occupied_space()-max_ammount;
 

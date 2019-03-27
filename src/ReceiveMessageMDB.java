@@ -23,9 +23,11 @@ public class ReceiveMessageMDB implements Runnable {
     }
 
     public void run() {
-        String aux = " ";
-        Message send_m = new Message("STORED", "1.0", peer.get_id(), this.message.get_file_id(), 
-                                                this.message.get_chunk_no(), 0, aux.getBytes());
-        peer.sendMessageMC(send_m.build());
+        if(this.message.get_sender_id() != peer.get_id()) {
+            String aux = " ";
+            Message send_m = new Message("STORED", "1.0", peer.get_id(), this.message.get_file_id(), 
+                                                    this.message.get_chunk_no(), 0, aux.getBytes());
+            peer.sendMessageMC(send_m.build());
+        }
     }
 }

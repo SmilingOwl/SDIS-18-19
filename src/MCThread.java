@@ -1,5 +1,6 @@
 import java.net.*;
 import java.io.*;
+import java.util.*;
 
 public class MCThread implements Runnable {
     MulticastSocket mc_socket;
@@ -10,6 +11,7 @@ public class MCThread implements Runnable {
     MCThread(InetAddress mc_address, int mc_port, Peer peer) {
         this.mc_address = mc_address;
         this.mc_port = mc_port;
+        this.mc_socket = mc_socket;
         this.peer = peer;
         try {
             this.mc_socket = new MulticastSocket(this.mc_port);

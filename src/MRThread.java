@@ -1,5 +1,7 @@
 import java.net.*;
 import java.io.*;
+import java.util.concurrent.TimeUnit;
+import java.util.Random;
 import java.util.Arrays;
 
 public class MRThread implements Runnable {
@@ -28,7 +30,10 @@ public class MRThread implements Runnable {
                 DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
                 mdr_socket.receive(msgPacket);
                 byte[] buffer = Arrays.copyOf(buf, msgPacket.getLength());
+                /*Random rand = new Random();
+                int random_delay = rand.nextInt(401);*/
                 this.peer.get_thread_executor().execute(new ReceiveMessageMDR(buffer, this.peer));
+                System.out.println("RECEIVED CHUNK MESSAGE!!");
             }
         } catch(IOException ex) {
             ex.printStackTrace();

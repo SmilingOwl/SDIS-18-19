@@ -17,6 +17,7 @@ public class SaveFile {
     private String file_name;
     private int number_of_chunks;
     private ArrayList<Chunk> chunks;
+    private Peer peer;
 
     SaveFile(String file_path, int rep_degree) {
         this.file = new File(file_path);
@@ -60,26 +61,24 @@ public class SaveFile {
         }
     }
 
-    SaveFile(String file_name, int number_of_chunks, boolean aux) {
+    SaveFile(String file_name, int number_of_chunks, Peer peer) {
         this.file_name = file_name;
+        this.number_of_chunks = number_of_chunks;
+        this.chunks = new ArrayList<Chunk>();
         try {
             File file = new File(this.file_name);
             file.createNewFile();            
-            /*FileOutputStream fos = new FileOutputStream(file_name);
-            for(int i = 0; i < chunks.size(); i++) {
-                fos.write(chunks.get(i).get_body());
-            }
-            fos.close();*/
         } catch(Exception ex) {
             ex.printStackTrace();
         }
     }
 
     public void add_chunk(byte[] chunk, int chunk_no) {
-        Chunk new_chunk = new Chunk(this.id, 0, chunk, chunk_no);
+        System.out.println("chunk body part1: " + chunk);
+        Chunk new_chunk = new Chunk(this.id, chunk, chunk_no);
         this.chunks.add(new_chunk);
         if(this.chunks.size() == this.number_of_chunks) 
-            add_to_file();
+            this.add_to_file();
     }
 
     public void add_to_file() {
@@ -87,9 +86,11 @@ public class SaveFile {
         try {
             FileOutputStream fos = new FileOutputStream(this.file_name);
             for(int i = 0; i < chunks.size(); i++) {
+                System.out.println("chunk body" + chunks.get(i).get_body());
                 fos.write(chunks.get(i).get_body());
             }
             fos.close();
+            peer.get_myFilesToRestore().remove(this.id);
         } catch(Exception ex) {
             ex.printStackTrace();
         }
