@@ -1,7 +1,5 @@
 import java.net.*;
 import java.io.*;
-import java.util.concurrent.TimeUnit;
-import java.util.Random;
 import java.util.Arrays;
 
 public class MRThread implements Runnable {

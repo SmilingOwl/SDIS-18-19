@@ -32,9 +32,11 @@ class Message {
         this.sender_id = Integer.parseInt(message_parts[2]);
         this.file_id = message_parts[3];
         this.chunk_no = Integer.parseInt(message_parts[4]);
+        
         if(this.type.equals("PUTCHUNK")) {
             this.rep_degree = Integer.parseInt(message_parts[5]);
             this.separate_body(message);
+
         } else if (this.type.equals("CHUNK")) {
             this.separate_body(message);
         }
@@ -43,6 +45,7 @@ class Message {
     public byte[] build() {
         String message;
         byte[] m_body;
+
         if (this.type.equals("PUTCHUNK")) {
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " " 
                 + this.rep_degree + " \r\n\r\n";
@@ -58,6 +61,7 @@ class Message {
         }else if(this.type.equals("GETCHUNK")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
             m_body = message.getBytes();
+
         } else if(this.type.equals("CHUNK")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
             byte[] m = message.getBytes();
@@ -68,6 +72,7 @@ class Message {
         }else if(this.type.equals("DELETE")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + " \r\n\r\n";
             m_body = message.getBytes();
+            
         }else if(this.type.equals("REMOVED")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
             m_body = message.getBytes();
@@ -79,7 +84,6 @@ class Message {
         for(int i = 0; i < message.length-4; i++) {
             if(message[i] == 0xD && message[i+1] == 0xA && message[i+2] == 0xD && message[i+3] == 0xA) {
                 this.body = Arrays.copyOfRange(message, i + 4, message.length);
-                byte[] header = Arrays.copyOfRange(message, 0, i + 4);
                 break;
             }
         }
