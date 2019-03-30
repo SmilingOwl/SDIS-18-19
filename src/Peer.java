@@ -4,13 +4,11 @@ java Peer 1 obj 224.0.0.3 1111 224.0.0.3 2222
  */
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
-import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
-import java.io.File;
 import java.net.InetAddress;
 
 public class Peer implements RemoteInterface{
@@ -58,10 +56,12 @@ public class Peer implements RemoteInterface{
             Registry registry = LocateRegistry.getRegistry();
             registry.bind(remote_object_name, stub);
             System.out.println("Peer ready");
+
         } catch (Exception e) {
             System.err.println("Peer exception: " + e.toString());
             e.printStackTrace();
         }
+
         Thread mdb = new Thread(this.mdb_channel);
         Thread mc = new Thread(this.mc_channel);
         Thread mdr = new Thread(this.mdr_channel);
@@ -122,14 +122,15 @@ public class Peer implements RemoteInterface{
         } catch(Exception ex) {
             ex.printStackTrace();
         }
+
         if(mc_address==null)
             System.exit(-1);
+
         int mc_port = Integer.parseInt(args[3]);
         int mdb_port = Integer.parseInt(args[5]);
         int mdr_port = Integer.parseInt(args[7]);
         String remote_object_name = args[1];
         int peer_id = Integer.parseInt(args[0]);
-
         Peer peer = new Peer(peer_id, mc_address, mc_port, mdb_address, mdb_port, mdr_address, mdr_port, remote_object_name);
     }
 
@@ -146,10 +147,12 @@ public class Peer implements RemoteInterface{
     }
 
     public String backup_file(String file_name, int rep_degree) throws RemoteException {
+        
         SaveFile file = new SaveFile(file_name, rep_degree);
         this.myFiles.put(file_name, file.get_id());
         this.files_size.put(file.get_id(), file.get_chunks().size());
         ArrayList<Chunk> chunks_to_send = file.get_chunks();
+      
         for(int i  = 0; i < chunks_to_send.size(); i++) {
             this.backup_chunk(chunks_to_send.get(i));
         }
@@ -158,25 +161,30 @@ public class Peer implements RemoteInterface{
 
     private void backup_chunk(Chunk chunk) {
         Message message = new Message("PUTCHUNK", "1.0", this.id, chunk.get_file_id(), chunk.get_chunk_no(), chunk.get_rep_degree(), chunk.get_body());
+      
         MulticasterPutChunkThread send_chunk_thread = 
             new MulticasterPutChunkThread(this.mdb_address, this.mdb_port, message.build(), chunk, this);
-        send_chunk_thread.run();
+      
+            send_chunk_thread.run();
     }
     
     public String restore_file(String file_name) throws RemoteException {
         String file_id = this.myFiles.get(file_name);
         int number_of_chunks = this.files_size.get(file_id);
+      
         if(file_id == null)
             return "File not found";
+        
         SaveFile new_file = new SaveFile(file_name, number_of_chunks, this);
         this.myFilesToRestore.put(file_id, new_file);
-        //run protocol and save chunks in chunks_to_save
+       
         for(int i = 0; i < number_of_chunks; i++) {
             Message to_send = new Message("GETCHUNK", "1.0", this.id, file_id, i+1, 0, null);
             this.sendMessageMC(to_send.build());
         }
         return "initiated restore";
     }
+    
     public String delete_file(String file_name) throws RemoteException {
         String file_id = this.myFiles.get(file_name);
         int number_of_chunks = this.files_size.get(file_id);
@@ -190,15 +198,26 @@ public class Peer implements RemoteInterface{
         }
         return "initiated delete";
     }
+
     public String reclaim(int max_ammount) throws RemoteException {
         int free_space= get_occupied_space()-max_ammount;
 
         if(free_space > 0){
+
+        }else{
             
         }
         return "initiated reclaim";
     }
+
     public String state() throws RemoteException {
+        int number_of_chunks = this.files_size.size();
+        for(int i=0; i< number_of_chunks; i++){
+
+            System.out.println("FILE PATHNAME: " + "\n");
+            System.out.println("FILE ID: " +"\n");
+            System.out.println("FILE REPLICATION DEGREE: " + "\n");
+        }
         return "initiated state";
     }
 }
