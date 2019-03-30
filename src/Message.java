@@ -18,9 +18,6 @@ class Message {
         this.chunk_no = chunk_no;
         this.rep_degree = rep_degree;
         this.body = body;
-        if(this.type.equals("CHUNK")){
-            System.out.println("I'm the new message! My body is: " + this.body);
-        }
     }
 
     Message(byte[] message) {

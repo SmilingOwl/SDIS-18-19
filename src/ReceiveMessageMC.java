@@ -32,11 +32,9 @@ public class ReceiveMessageMC implements Runnable {
                 this.peer.get_chunk_occurrences().put(key, senders);
             }
         } else if(m.get_type().equals("GETCHUNK")) {
-            System.out.println("received get_chunk message");
             for(int i = 0; i < this.peer.get_chunks().size(); i++) {
                 if(this.peer.get_chunks().get(i).get_file_id().equals(m.get_file_id()) 
                         && this.peer.get_chunks().get(i).get_chunk_no() == m.get_chunk_no()) {
-                            System.out.println("I have the chunk! I'mma send it!\n");
                     Message new_m = new Message("CHUNK", "1.0", this.peer.get_id(), m.get_file_id(),
                         m.get_chunk_no(), 0, this.peer.get_chunks().get(i).get_body());
                     Random rand = new Random();
@@ -46,7 +44,7 @@ public class ReceiveMessageMC implements Runnable {
                             new_m.build(), m.get_file_id(), m.get_chunk_no()), 
                         random_delay, TimeUnit.MILLISECONDS);
                         break;
-                } else System.out.println("I don't have the chunk! I ain't gonna send it!\n");
+                }
             }
         } else if(m.get_type().equals("DELETE")){
             for(int i = 0; i < this.peer.get_chunks().size(); i++) {

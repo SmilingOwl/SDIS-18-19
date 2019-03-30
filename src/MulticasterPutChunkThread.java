@@ -25,7 +25,6 @@ public class MulticasterPutChunkThread implements Runnable {
         if(this.peer.get_chunk_occurrences().get(key) != null)
             occurrences = this.peer.get_chunk_occurrences().get(key).size();
         
-        System.out.println("occurrences: " + occurrences);
         while(occurrences < this.chunk.get_rep_degree() && this.sent_messages_no < 5) {
             this.send_message();
             try {

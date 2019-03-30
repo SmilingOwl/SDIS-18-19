@@ -1,6 +1,6 @@
 /*
 To run: java Peer peer_id remote_obj_name mc_addr mc_port mdb_addr mdb_port
-java Peer 1 obj 224.0.0.3 1111 224.0.0.3 2222
+java Peer 1 obj 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
  */
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -149,6 +149,9 @@ public class Peer implements RemoteInterface{
     public String backup_file(String file_name, int rep_degree) throws RemoteException {
         
         SaveFile file = new SaveFile(file_name, rep_degree);
+        if (this.files_size.get(file.get_id()) != null) {
+            return "File already exists";
+        }
         this.myFiles.put(file_name, file.get_id());
         this.files_size.put(file.get_id(), file.get_chunks().size());
         ArrayList<Chunk> chunks_to_send = file.get_chunks();
@@ -182,7 +185,7 @@ public class Peer implements RemoteInterface{
             Message to_send = new Message("GETCHUNK", "1.0", this.id, file_id, i+1, 0, null);
             this.sendMessageMC(to_send.build());
         }
-        return "initiated restore";
+        return "File restored successfully";
     }
     
     public String delete_file(String file_name) throws RemoteException {

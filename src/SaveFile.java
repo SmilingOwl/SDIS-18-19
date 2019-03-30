@@ -74,7 +74,6 @@ public class SaveFile {
     }
 
     public void add_chunk(byte[] chunk, int chunk_no) {
-        System.out.println("chunk body part1: " + chunk);
         Chunk new_chunk = new Chunk(this.id, chunk, chunk_no);
         this.chunks.add(new_chunk);
         if(this.chunks.size() == this.number_of_chunks) 
@@ -86,7 +85,6 @@ public class SaveFile {
         try {
             FileOutputStream fos = new FileOutputStream(this.file_name);
             for(int i = 0; i < chunks.size(); i++) {
-                System.out.println("chunk body" + chunks.get(i).get_body());
                 fos.write(chunks.get(i).get_body());
             }
             fos.close();
