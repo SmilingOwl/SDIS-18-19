@@ -1,3 +1,7 @@
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 public class ReceiveMessageMDB implements Runnable {
     private Peer peer;
     private Message message;
@@ -16,6 +20,17 @@ public class ReceiveMessageMDB implements Runnable {
                 }
                 if(!found) {
                     Chunk new_chunk = new Chunk(this.message.get_file_id(), this.message.get_rep_degree(), this.message.get_body(), this.message.get_chunk_no());
+                    String new_file_name = "peer" + this.peer.get_id() + "/backup/" + this.message.get_file_id() + "/chk" + this.message.get_chunk_no();
+                    try {
+                        new File("peer" + this.peer.get_id() + "/backup/" + this.message.get_file_id()).mkdirs();
+                        File file = new File(new_file_name);
+                        file.createNewFile(); 
+                        FileOutputStream fos = new FileOutputStream(new_file_name);
+                        fos.write(new_chunk.get_body());
+                        fos.close();
+                    } catch(IOException ex) {
+                        ex.printStackTrace();
+                    }
                     peer.get_chunks().add(new_chunk);
                 }
             }

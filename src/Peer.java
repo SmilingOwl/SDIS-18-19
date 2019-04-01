@@ -10,6 +10,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
 import java.net.InetAddress;
+import java.io.File;
 
 public class Peer implements RemoteInterface{
     private MCThread mc_channel;
@@ -50,6 +51,19 @@ public class Peer implements RemoteInterface{
         this.files_size = new ConcurrentHashMap<String, Integer>();
         this.chunk_occurrences = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
+
+        File peer_dir = new File("peer" + this.id);
+        if(!peer_dir.exists()) {
+            peer_dir.mkdir();
+        }
+        File backup_dir = new File("peer" + this.id + "/backup");
+        if(!backup_dir.exists()) {
+            backup_dir.mkdir();
+        }
+        File restore_dir = new File("peer" + this.id + "/restored");
+        if(!restore_dir.exists()) {
+            restore_dir.mkdir();
+        }
         
         try {
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(this, 0);
@@ -159,7 +173,7 @@ public class Peer implements RemoteInterface{
         for(int i  = 0; i < chunks_to_send.size(); i++) {
             this.backup_chunk(chunks_to_send.get(i));
         }
-        return "Backup executed successfully";
+        return "Backup executed successfully.";
     }
 
     private void backup_chunk(Chunk chunk) {
@@ -172,12 +186,11 @@ public class Peer implements RemoteInterface{
     }
     
     public String restore_file(String file_name) throws RemoteException {
-        String file_id = this.myFiles.get(file_name);
-        int number_of_chunks = this.files_size.get(file_id);
-      
+        String file_id = this.myFiles.get(file_name);      
         if(file_id == null)
-            return "File not found";
+            return "File not found.";
         
+        int number_of_chunks = this.files_size.get(file_id);
         SaveFile new_file = new SaveFile(file_name, number_of_chunks, this);
         this.myFilesToRestore.put(file_id, new_file);
        
@@ -185,21 +198,23 @@ public class Peer implements RemoteInterface{
             Message to_send = new Message("GETCHUNK", "1.0", this.id, file_id, i+1, 0, null);
             this.sendMessageMC(to_send.build());
         }
-        return "File restored successfully";
+        return "File restored successfully.";
     }
     
     public String delete_file(String file_name) throws RemoteException {
-        String file_id = this.myFiles.get(file_name);
-        int number_of_chunks = this.files_size.get(file_id);
-       
+        String file_id = this.myFiles.get(file_name);       
         if(file_id == null)
-            return "File not found";
+            return "File not found.";
         
+        int number_of_chunks = this.files_size.get(file_id);
         for(int i=0; i< number_of_chunks; i++){
             Message to_send = new Message("DELETE", "1.0", this.id, file_id, 0, 0, null);
             this.sendMessageMC(to_send.build());
         }
-        return "initiated delete";
+        this.myFiles.remove(file_name);
+        this.files_size.remove(file_id);
+        this.chunk_occurrences.remove(file_id);
+        return "File deleted successfully.";
     }
 
     public String reclaim(int max_ammount) throws RemoteException {

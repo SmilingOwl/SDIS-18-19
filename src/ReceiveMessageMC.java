@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.io.File;
 
 public class ReceiveMessageMC implements Runnable {
     private Peer peer;
@@ -47,12 +48,27 @@ public class ReceiveMessageMC implements Runnable {
                 }
             }
         } else if(m.get_type().equals("DELETE")){
+            boolean found_chunk = false;
             for(int i = 0; i < this.peer.get_chunks().size(); i++) {
                 if(this.peer.get_chunks().get(i).get_file_id().equals(m.get_file_id())){
                     this.peer.get_chunks().remove(i);
+                    found_chunk = true;
                     i--;
                 }
             }
+            if(!found_chunk)
+                return;
+            File file_dir = new File("peer" + this.peer.get_id() + "/backup/" + m.get_file_id());
+            if(!file_dir.exists()) {
+                System.out.println("Trying to delete file chunks. File directory doesn't exist.");
+                return;
+            }
+            String[] chunks = file_dir.list();
+            for(String chunk_name: chunks){
+                File currentFile = new File("peer" + this.peer.get_id() + "/backup/" + m.get_file_id() + "/" + chunk_name);
+                currentFile.delete();
+            }
+            file_dir.delete();
         }
     }
 }

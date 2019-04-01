@@ -28,7 +28,8 @@ class Message {
         this.version = message_parts[1];
         this.sender_id = Integer.parseInt(message_parts[2]);
         this.file_id = message_parts[3];
-        this.chunk_no = Integer.parseInt(message_parts[4]);
+        if(!this.type.equals("DELETE"))
+            this.chunk_no = Integer.parseInt(message_parts[4]);
         
         if(this.type.equals("PUTCHUNK")) {
             this.rep_degree = Integer.parseInt(message_parts[5]);

@@ -65,8 +65,9 @@ public class SaveFile {
         this.file_name = file_name;
         this.number_of_chunks = number_of_chunks;
         this.chunks = new ArrayList<Chunk>();
+        this.peer = peer;
         try {
-            File file = new File(this.file_name);
+            File file = new File("peer" + this.peer.get_id() + "/restored/" + this.file_name);
             file.createNewFile();            
         } catch(Exception ex) {
             ex.printStackTrace();
@@ -83,7 +84,7 @@ public class SaveFile {
     public void add_to_file() {
         Collections.sort(chunks);
         try {
-            FileOutputStream fos = new FileOutputStream(this.file_name);
+            FileOutputStream fos = new FileOutputStream("peer" + this.peer.get_id() + "/restored/" + this.file_name);
             for(int i = 0; i < chunks.size(); i++) {
                 fos.write(chunks.get(i).get_body());
             }
