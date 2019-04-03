@@ -31,6 +31,7 @@ public class Peer implements RemoteInterface{
     private ConcurrentHashMap<String, ArrayList<Integer>> chunk_occurrences;
     private ArrayList<Chunk> myChunks;
     private int maxFreeSpace = 1000000000;
+    private int free_space;
 
     Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
                                 int mdr_port, String remote_object_name) {
@@ -51,6 +52,7 @@ public class Peer implements RemoteInterface{
         this.files_size = new ConcurrentHashMap<String, Integer>();
         this.chunk_occurrences = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
+        this.free_space = this.maxFreeSpace;
 
         File peer_dir = new File("peer" + this.id);
         if(!peer_dir.exists()) {
@@ -86,11 +88,19 @@ public class Peer implements RemoteInterface{
     }
 
     public int get_occupied_space(){
-        int occupied_space=0;
-        for(int i=0; i< myChunks.size(); i++){
-            occupied_space += myChunks.get(i).get_body().length;
+        int occupied_space = 0;
+        for(int i = 0; i < this.myChunks.size(); i++) {
+            occupied_space += this.myChunks.get(i).get_body().length;
         }
         return occupied_space;
+    }
+
+    public int get_free_space() {
+        return this.free_space;
+    }
+
+    public void add_to_free_space(int occupied) {
+        this.free_space += occupied;
     }
 
     public InetAddress get_mdr_address() {
@@ -217,13 +227,56 @@ public class Peer implements RemoteInterface{
         return "File deleted successfully.";
     }
 
-    public String reclaim(int max_ammount) throws RemoteException {
-        int free_space= get_occupied_space()-max_ammount;
-
-        if(free_space > 0){
-
-        }else{
-            
+    public String reclaim(int max_ammount) throws RemoteException { //TODO send message REMOVED
+        this.maxFreeSpace = max_ammount;
+        this.free_space = this.maxFreeSpace - this.get_occupied_space();
+        int i = 0;
+        while(this.free_space < 0) {
+            if(i < this.myChunks.size()) {
+                String chunk_name = this.myChunks.get(i).get_file_id() + ":" + this.myChunks.get(i).get_chunk_no();
+                ArrayList<Integer> occurrences_list = chunk_occurrences.get(chunk_name);
+                if(occurrences_list != null) {
+                    int occurrences = occurrences_list.size();
+                    if(occurrences < this.myChunks.get(i).get_rep_degree()) {
+                        int occupied = this.myChunks.get(i).get_body().length;
+                        this.myChunks.remove(i);
+                        this.add_to_free_space(occupied);
+                        System.out.println("After removing chunk on reclaim, I have " + this.get_free_space() + " available");
+                        File currentFile = new File("peer" + this.id + "/backup/" 
+                                        + this.myChunks.get(i).get_file_id() + "/" + this.myChunks.get(i).get_chunk_no());
+                        if(!currentFile.exists()) {
+                            System.out.println("Trying to delete chunk on reclaim. File doesn't exist.");
+                            continue;
+                        }
+                        currentFile.delete();
+                        //SEND REMOVED MESSAGE
+                        i--;
+                    }
+                }
+            } else 
+                break;
+            i++;
+        }
+        i = 0;
+        while(this.free_space < 0) {
+            if(i < this.myChunks.size()) {
+                String chunk_name = this.myChunks.get(i).get_file_id() + ":" + this.myChunks.get(i).get_chunk_no();
+                int occupied = this.myChunks.get(i).get_body().length;
+                this.myChunks.remove(i);
+                this.add_to_free_space(occupied);
+                System.out.println("After removing chunk on reclaim, I have " + this.get_free_space() + " available");
+                File currentFile = new File("peer" + this.id + "/backup/" 
+                                + this.myChunks.get(i).get_file_id() + "/" + this.myChunks.get(i).get_chunk_no());
+                if(!currentFile.exists()) {
+                    System.out.println("Trying to delete chunk on reclaim. File doesn't exist.");
+                    continue;
+                }
+                currentFile.delete();
+                //SEND REMOVED MESSAGE
+                i--;
+            }
+            else break;
+            i++;
         }
         return "initiated reclaim";
     }

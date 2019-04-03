@@ -49,9 +49,13 @@ public class ReceiveMessageMC implements Runnable {
             }
         } else if(m.get_type().equals("DELETE")){
             boolean found_chunk = false;
+            int occupied = 0;
             for(int i = 0; i < this.peer.get_chunks().size(); i++) {
                 if(this.peer.get_chunks().get(i).get_file_id().equals(m.get_file_id())){
+                    occupied = this.peer.get_chunks().get(i).get_body().length;
                     this.peer.get_chunks().remove(i);
+                    this.peer.add_to_free_space(occupied);
+                    System.out.println("After removing chunk, I have " + this.peer.get_free_space() + " available");
                     found_chunk = true;
                     i--;
                 }
