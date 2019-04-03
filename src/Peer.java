@@ -282,13 +282,35 @@ public class Peer implements RemoteInterface{
     }
 
     public String state() throws RemoteException {
-        int number_of_chunks = this.files_size.size();
-        for(int i=0; i< number_of_chunks; i++){
+       
+        // for each file whose backup it has initiated:
+        for(int i=0; i< ; i++){
 
             System.out.println("FILE PATHNAME: " + "\n");
             System.out.println("FILE ID: " +"\n");
             System.out.println("FILE REPLICATION DEGREE: " + "\n");
+
+            //For each chunk of the file:
+            for( int j=0; j< ; j++){
+                System.out.println("CHUNK ID: " + "\n");
+                System.out.println("CHUNK PERCEIVED REPLICATION DEGREE: " + "\n");
+
+            }
         }
+
+        // for each chunk it stores:
+        for (int i=0; i< myChunks.size(); i++){
+            System.out.println("CHUNK ID: " + myChunks.get(i).get_chunk_no() +"\n");
+            System.out.println("CHUNK SIZE: " + myChunks.get(i).get_body().length + "\n");
+            System.out.println("CHUNK PERCEIVED REPLICATION DEGREE: " + myChunks.get(i).get_curr_rep_degree()+ "\n");
+        }
+
+        // the maximum amount of disk space that can be used to store chunks
+        int free_space= this.maxFreeSpace - get_occupied_space();
+        System.out.println("MAXIMUM AMOUNT OF THE DISK SPACE TO STORE CHUNKS:" + free_space + "\n");
+
+        // the amount of storage used to backup the chunks
+        System.out.println("STORAGE USED TO BACKUP THE CHUNKS: " + get_occupied_space() + "\n");
         return "initiated state";
     }
 }
