@@ -232,11 +232,11 @@ public class Peer implements RemoteInterface{
 
         // for each chunk it stores:
         for (int i=0; i< myChunks.size(); i++){
-            System.out.println("CHUNK ID: " + "\n");
-            System.out.println("CHUNK SIZE: " + "\n");
-            System.out.println("CHUNK PERCEIVED REPLICATION DEGREE: " + "\n");
+            System.out.println("CHUNK ID: " + myChunks.get(i).get_chunk_no() +"\n");
+            System.out.println("CHUNK SIZE: " + myChunks.get(i).get_body().length + "\n");
+            System.out.println("CHUNK PERCEIVED REPLICATION DEGREE: " + myChunks.get(i).get_curr_rep_degree()+ "\n");
         }
-        
+
         // the maximum amount of disk space that can be used to store chunks
         int free_space= this.maxFreeSpace - get_occupied_space();
         System.out.println("MAXIMUM AMOUNT OF THE DISK SPACE TO STORE CHUNKS:" + free_space + "\n");
