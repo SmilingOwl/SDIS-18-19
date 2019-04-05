@@ -303,7 +303,7 @@ public class Peer implements RemoteInterface{
             }
         }*/
 
-        // for each chunk it stores:
+        //For each chunk it stores:
         for (int i=0; i< myChunks.size(); i++){
             System.out.println("CHUNK ID: " + myChunks.get(i).get_chunk_no() +"\n");
             System.out.println("CHUNK SIZE: " + myChunks.get(i).get_body().length + "\n");
