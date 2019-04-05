@@ -73,6 +73,28 @@ public class ReceiveMessageMC implements Runnable {
                 currentFile.delete();
             }
             file_dir.delete();
+        } else if(m.get_type().equals("REMOVED")){
+            System.out.println("received message removed!!");
+            if(m.get_sender_id() != this.peer.get_id()) {
+                String chunk_name = m.get_file_id() + ":" + m.get_chunk_no();
+                if(this.peer.get_chunk_occurrences().get(chunk_name) != null) {
+                    ArrayList<Integer> occurrences = this.peer.get_chunk_occurrences().get(chunk_name);
+                    for(int i = 0; i < occurrences.size(); i++) {
+                        if(occurrences.get(i) == m.get_sender_id())
+                        {
+                            occurrences.remove(i);
+                            break;
+                        }
+                    }
+                    for(int j = 0; j < this.peer.get_chunks().size(); j++) {
+                        if(this.peer.get_chunks().get(j).get_file_id() == m.get_file_id()
+                            && this.peer.get_chunks().get(j).get_chunk_no() == m.get_chunk_no()) {
+                                this.peer.backup_chunk(this.peer.get_chunks().get(j));
+                                break;
+                            }
+                    }
+                }
+            }
         }
     }
 }

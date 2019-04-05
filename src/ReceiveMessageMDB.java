@@ -17,7 +17,7 @@ public class ReceiveMessageMDB implements Runnable {
                                                     == peer.get_chunks().get(i).get_chunk_no())
                         found = true;
                 }
-                if(!found && (this.peer.get_free_space() < this.message.get_body().length)) {
+                if(!found && (this.peer.get_free_space() >= this.message.get_body().length)) {
                     Chunk new_chunk = new Chunk(this.message.get_file_id(), this.message.get_rep_degree(), this.message.get_body(), this.message.get_chunk_no());
                     String new_file_name = "peer" + this.peer.get_id() + "/backup/" + this.message.get_file_id() + "/chk" + this.message.get_chunk_no();
                     try {
