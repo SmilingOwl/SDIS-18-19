@@ -87,6 +87,14 @@ public class Peer implements RemoteInterface{
         mdr.start();
     }
 
+    public InetAddress get_mdb_address() {
+        return this.mdb_address;
+    }
+
+    public int get_mdb_port() {
+        return this.mdb_port;
+    }
+
     public int get_occupied_space(){
         int occupied_space = 0;
         for(int i = 0; i < this.myChunks.size(); i++) {
@@ -162,6 +170,10 @@ public class Peer implements RemoteInterface{
         return this.chunk_occurrences;
     }
 
+    public ConcurrentHashMap<String, String> get_files() {
+        return this.myFiles;
+    }
+
     public ConcurrentHashMap<String, SaveFile> get_myFilesToRestore() {
         return this.myFilesToRestore;
     }
@@ -214,18 +226,16 @@ public class Peer implements RemoteInterface{
         if(file_id == null)
             return "File not found.";
         
-        int number_of_chunks = this.files_size.get(file_id);
-        for(int i=0; i< number_of_chunks; i++){
-            Message to_send = new Message("DELETE", "1.0", this.id, file_id, 0, 0, null);
-            this.sendMessageMC(to_send.build());
-        }
+        Message to_send = new Message("DELETE", "1.0", this.id, file_id, 0, 0, null);
+        this.sendMessageMC(to_send.build());
+
         this.myFiles.remove(file_name);
         this.files_size.remove(file_id);
         this.chunk_occurrences.remove(file_id);
         return "File deleted successfully.";
     }
 
-    public String reclaim(int max_ammount) throws RemoteException { //TODO send message REMOVED
+    public String reclaim(int max_ammount) throws RemoteException {
         this.maxFreeSpace = max_ammount;
         this.free_space = this.maxFreeSpace - this.get_occupied_space();
         int i = 0;

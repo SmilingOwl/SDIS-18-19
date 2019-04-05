@@ -66,6 +66,7 @@ public class SaveFile {
         this.number_of_chunks = number_of_chunks;
         this.chunks = new ArrayList<Chunk>();
         this.peer = peer;
+        this.id = this.peer.get_files().get(this.file_name);
         try {
             File file = new File("peer" + this.peer.get_id() + "/restored/" + this.file_name);
             file.createNewFile();            
@@ -89,7 +90,10 @@ public class SaveFile {
                 fos.write(chunks.get(i).get_body());
             }
             fos.close();
-            peer.get_myFilesToRestore().remove(this.id);
+            System.out.println(this.id);
+            System.out.println(this.peer.get_myFilesToRestore().get(this.id));
+            if(this.peer.get_myFilesToRestore().get(this.id) != null)
+                this.peer.get_myFilesToRestore().remove(this.id);
         } catch(Exception ex) {
             ex.printStackTrace();
         }

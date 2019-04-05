@@ -1,5 +1,6 @@
 import java.net.*;
 import java.io.*;
+import java.util.ArrayList;
 
 public class MulticasterPutChunkThread implements Runnable {
     private InetAddress mc_address;
@@ -20,6 +21,13 @@ public class MulticasterPutChunkThread implements Runnable {
 
     @Override
     public void run(){
+        ArrayList<String> chunks_not_to_send = this.peer.get_myChunksNotToSend();
+        for(int i = 0; i < chunks_not_to_send.size(); i++) {
+            if(chunks_not_to_send.get(i).equals(this.chunk.get_file_id() + ":" + this.chunk.get_chunk_no())) {
+                chunks_not_to_send.remove(i);
+                return;
+            }
+        }
         String key = this.chunk.get_file_id() + ":" + this.chunk.get_chunk_no();
         int occurrences = 0;
         if(this.peer.get_chunk_occurrences().get(key) != null)
@@ -32,6 +40,8 @@ public class MulticasterPutChunkThread implements Runnable {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+            if(this.peer.get_chunk_occurrences().get(key) != null)
+                occurrences = this.peer.get_chunk_occurrences().get(key).size();
         }
     }
 
