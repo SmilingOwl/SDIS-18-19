@@ -15,7 +15,6 @@ public class Chunk implements Comparable<Chunk> {
         this.rep_degree = rep_degree;
         this.body = body;
         this.chunk_number = chunk_number;
-        this.current_rep_degree = 0;
         this.senders_who_stored = new ArrayList<>();
     }
 
@@ -23,20 +22,6 @@ public class Chunk implements Comparable<Chunk> {
         this.file_id = file_id;
         this.body = body;
         this.chunk_number = chunk_number;
-    }
-
-    public void increase_curr_rep_degree(int sender_id) {
-        boolean found = false;
-        for(int i = 0; i < this.senders_who_stored.size(); i++){
-            if(this.senders_who_stored.get(i) == sender_id) {
-                found = true;
-                break;
-            }
-        }
-        if(!found) {
-            this.current_rep_degree++;
-            this.senders_who_stored.add(sender_id);
-        }
     }
 
     public byte[] get_body() {
@@ -49,10 +34,6 @@ public class Chunk implements Comparable<Chunk> {
 
     public int get_rep_degree() {
         return this.rep_degree;
-    }
-
-    public int get_curr_rep_degree() {
-        return this.current_rep_degree;
     }
 
     public int get_chunk_no() {

@@ -59,6 +59,7 @@ public class SaveFile {
             System.out.println("Error splitting file");
             ex.printStackTrace();
         }
+        number_of_chunks = this.chunks.size();
     }
 
     SaveFile(String file_name, int number_of_chunks, Peer peer) {
@@ -66,7 +67,7 @@ public class SaveFile {
         this.number_of_chunks = number_of_chunks;
         this.chunks = new ArrayList<Chunk>();
         this.peer = peer;
-        this.id = this.peer.get_files().get(this.file_name);
+        this.id = this.peer.get_files().get(this.file_name).get_id();
         try {
             File file = new File("peer" + this.peer.get_id() + "/restored/" + this.file_name);
             file.createNewFile();            

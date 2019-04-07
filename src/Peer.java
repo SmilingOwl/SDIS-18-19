@@ -24,13 +24,12 @@ public class Peer implements RemoteInterface{
     private int mdr_port;
     private int id;
     private ScheduledThreadPoolExecutor thread_executor;
-    private ConcurrentHashMap<String, String> myFiles;
+    private ConcurrentHashMap<String, SaveFile> myFiles;
     private ConcurrentHashMap<String, SaveFile> myFilesToRestore;
     private ArrayList<String> myChunksNotToSend;
-    private ConcurrentHashMap<String, Integer> files_size;
     private ConcurrentHashMap<String, ArrayList<Integer>> chunk_occurrences;
     private ArrayList<Chunk> myChunks;
-    private int maxFreeSpace = 1000000000;
+    private int maxFreeSpace = 100000000;
     private int free_space;
 
     Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
@@ -46,10 +45,9 @@ public class Peer implements RemoteInterface{
         this.mdr_address = mdr_address;
         this.mdr_channel = new MRThread(this.mdr_address, this.mdr_port, this);
         this.myChunks = new ArrayList<>();
-        this.myFiles = new ConcurrentHashMap<String, String>();
+        this.myFiles = new ConcurrentHashMap<String, SaveFile>();
         this.myFilesToRestore = new ConcurrentHashMap<String, SaveFile>();
         this.myChunksNotToSend = new ArrayList<String>();
-        this.files_size = new ConcurrentHashMap<String, Integer>();
         this.chunk_occurrences = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
         this.free_space = this.maxFreeSpace;
@@ -170,7 +168,7 @@ public class Peer implements RemoteInterface{
         return this.chunk_occurrences;
     }
 
-    public ConcurrentHashMap<String, String> get_files() {
+    public ConcurrentHashMap<String, SaveFile> get_files() {
         return this.myFiles;
     }
 
@@ -185,11 +183,10 @@ public class Peer implements RemoteInterface{
     public String backup_file(String file_name, int rep_degree) throws RemoteException {
         
         SaveFile file = new SaveFile(file_name, rep_degree);
-        if (this.files_size.get(file.get_id()) != null) {
+        if (this.myFiles.get(file_name) != null) {
             return "File already exists";
         }
-        this.myFiles.put(file_name, file.get_id());
-        this.files_size.put(file.get_id(), file.get_chunks().size());
+        this.myFiles.put(file_name, file);
         ArrayList<Chunk> chunks_to_send = file.get_chunks();
       
         for(int i  = 0; i < chunks_to_send.size(); i++) {
@@ -202,15 +199,16 @@ public class Peer implements RemoteInterface{
         Message message = new Message("PUTCHUNK", "1.0", this.id, chunk.get_file_id(), chunk.get_chunk_no(), chunk.get_rep_degree(), chunk.get_body());
            
         this.get_thread_executor().execute(
-                        new MulticasterPutChunkThread(this.mdb_address, this.mdb_port, message.build(), chunk, this));
+                new MulticasterPutChunkThread(this.mdb_address, this.mdb_port, message.build(), chunk, this));
     }
     
     public String restore_file(String file_name) throws RemoteException {
-        String file_id = this.myFiles.get(file_name);      
-        if(file_id == null)
+        SaveFile file = this.myFiles.get(file_name);      
+        if(file == null)
             return "File not found.";
+        String file_id = file.get_id();
         
-        int number_of_chunks = this.files_size.get(file_id);
+        int number_of_chunks = file.get_chunks().size();
         SaveFile new_file = new SaveFile(file_name, number_of_chunks, this);
         this.myFilesToRestore.put(file_id, new_file);
        
@@ -222,15 +220,15 @@ public class Peer implements RemoteInterface{
     }
     
     public String delete_file(String file_name) throws RemoteException {
-        String file_id = this.myFiles.get(file_name);       
-        if(file_id == null)
+        SaveFile file = this.myFiles.get(file_name);       
+        if(file == null)
             return "File not found.";
+        String file_id = file.get_id();
         
         Message to_send = new Message("DELETE", "1.0", this.id, file_id, 0, 0, null);
         this.sendMessageMC(to_send.build());
 
         this.myFiles.remove(file_name);
-        this.files_size.remove(file_id);
         this.chunk_occurrences.remove(file_id);
         return "File deleted successfully.";
     }
@@ -238,94 +236,44 @@ public class Peer implements RemoteInterface{
     public String reclaim(int max_ammount) throws RemoteException {
         this.maxFreeSpace = max_ammount;
         this.free_space = this.maxFreeSpace - this.get_occupied_space();
-        int i = 0;
-        while(this.free_space < 0) {
-            if(i < this.myChunks.size()) {
-                String chunk_name = this.myChunks.get(i).get_file_id() + ":" + this.myChunks.get(i).get_chunk_no();
-                ArrayList<Integer> occurrences_list = chunk_occurrences.get(chunk_name);
-                if(occurrences_list != null) {
-                    int occurrences = occurrences_list.size();
-                    if(occurrences < this.myChunks.get(i).get_rep_degree()) {
-                        int chunk_n = this.myChunks.get(i).get_chunk_no();
-                        String file_id = this.myChunks.get(i).get_file_id();
-                        int occupied = this.myChunks.get(i).get_body().length;
-                        this.add_to_free_space(occupied);
-                        System.out.println("After removing chunk on reclaim, I have " + this.get_free_space() + " available");
-                        File currentFile = new File("peer" + this.id + "/backup/" 
-                                        + this.myChunks.get(i).get_file_id() + "/chk" + this.myChunks.get(i).get_chunk_no());
-                        if(!currentFile.exists()) {
-                            System.out.println("Trying to delete chunk on reclaim. File doesn't exist.");
-                            continue;
-                        }
-                        currentFile.delete();
-                        Message message = new Message("REMOVED", "1.0", this.id, file_id, chunk_n, 0, null);
-                        this.sendMessageMC(message.build());
-                        //CHECK IF FOLDER IS EMPTY!
-                        this.myChunks.remove(i);
-                        i--;
-                    }
-                }
-            } else 
-                break;
-            i++;
-        }
-        i = 0;
-        while(this.free_space < 0) {
-            if(i < this.myChunks.size()) {
-                int chunk_n = this.myChunks.get(i).get_chunk_no();
-                String file_id = this.myChunks.get(i).get_file_id();
-                String chunk_name = this.myChunks.get(i).get_file_id() + ":" + this.myChunks.get(i).get_chunk_no();
-                int occupied = this.myChunks.get(i).get_body().length;
-                this.add_to_free_space(occupied);
-                System.out.println("After removing chunk on reclaim, I have " + this.get_free_space() + " available");
-                File currentFile = new File("peer" + this.id + "/backup/" 
-                                + this.myChunks.get(i).get_file_id() + "/chk" + this.myChunks.get(i).get_chunk_no());
-                if(!currentFile.exists()) {
-                    System.out.println("Trying to delete chunk on reclaim. File doesn't exist.");
-                    continue;
-                }
-                currentFile.delete();
-                Message message = new Message("REMOVED", "1.0", this.id, file_id, chunk_n, 0, null);
-                this.sendMessageMC(message.build());
-                this.myChunks.remove(i);
-                i--;
-            }
-            else break;
-            i++;
-        }
+        this.get_thread_executor().execute(new DoReclaimThread(this));
         return "initiated reclaim";
     }
 
     public String state() throws RemoteException {
-       
+        String info = "Files backed up: \n\n";
         // for each file whose backup it has initiated:
-        /*for(int i=0; i< ; i++){
+        for(SaveFile file : myFiles.values())
+        { 
+            info += "FILE PATHNAME: " + "\n";
+            info += "FILE ID: " +"\n";
+            info += "FILE REPLICATION DEGREE: " + "\n";
 
-            System.out.println("FILE PATHNAME: " + "\n");
-            System.out.println("FILE ID: " +"\n");
-            System.out.println("FILE REPLICATION DEGREE: " + "\n");
-
-            //For each chunk of the file:
-            for( int j=0; j< ; j++){
-                System.out.println("CHUNK ID: " + "\n");
-                System.out.println("CHUNK PERCEIVED REPLICATION DEGREE: " + "\n");
-
+            for(int i = 0; i < file.get_chunks().size(); i++){
+                String key = file.get_id() + ":" + file.get_chunks().get(i).get_chunk_no();
+                info += "CHUNK ID: " + "\n";
+                info += "CHUNK PERCEIVED REPLICATION DEGREE: " + "\n";
             }
-        }*/
+            info += "\n";
+        }
 
+        info += "\nStored chunks: \n\n";
         //For each chunk it stores:
         for (int i=0; i< myChunks.size(); i++){
-            System.out.println("CHUNK ID: " + myChunks.get(i).get_chunk_no() +"\n");
-            System.out.println("CHUNK SIZE: " + myChunks.get(i).get_body().length + "\n");
-            System.out.println("CHUNK PERCEIVED REPLICATION DEGREE: " + myChunks.get(i).get_curr_rep_degree()+ "\n");
+            info += "CHUNK ID: " + myChunks.get(i).get_chunk_no() +"\n";
+            info += "CHUNK SIZE: " + myChunks.get(i).get_body().length + "\n";
+            String key = myChunks.get(i).get_file_id() + ":" + myChunks.get(i).get_chunk_no();
+            int rep_degree = 0;
+            if(chunk_occurrences.get(key) != null)
+                rep_degree = chunk_occurrences.get(key).size();
+            info += "CHUNK PERCEIVED REPLICATION DEGREE: " + rep_degree + "\n";
         }
 
         // the maximum amount of disk space that can be used to store chunks
-        int free_space= this.maxFreeSpace - get_occupied_space();
-        System.out.println("MAXIMUM AMOUNT OF THE DISK SPACE TO STORE CHUNKS:" + free_space + "\n");
+        info += "MAXIMUM AMOUNT OF THE DISK SPACE TO STORE CHUNKS:" + this.maxFreeSpace + "\n";
 
         // the amount of storage used to backup the chunks
-        System.out.println("STORAGE USED TO BACKUP THE CHUNKS: " + get_occupied_space() + "\n");
-        return "initiated state";
+        info += "STORAGE USED TO BACKUP THE CHUNKS: " + get_occupied_space() + "\n";
+        return info;
     }
 }

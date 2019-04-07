@@ -15,7 +15,9 @@ public class TestApp {
         String[] peer_ap = args[0].split(":");
         String hostname = peer_ap[0];
         String remote_object_name = peer_ap[1];
-        String file_path = args[2];
+        String file_path = "";
+        if(args.length > 2)
+            file_path = args[2];
         String response;
 
         try {
