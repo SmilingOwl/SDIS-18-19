@@ -29,9 +29,13 @@ public class DoReclaimThread implements Runnable {
                             continue;
                         }
                         currentFile.delete();
+                        File parent_folder = new File("peer" + this.peer.get_id() + "/backup/" 
+                                        + this.peer.get_chunks().get(i).get_file_id());
+                        if(parent_folder.exists() && parent_folder.isDirectory() && parent_folder.list().length == 0) {
+                            parent_folder.delete();
+                        }
                         Message message = new Message("REMOVED", "1.0", this.peer.get_id(), file_id, chunk_n, 0, null);
                         this.peer.sendMessageMC(message.build());
-                        //TODO CHECK IF FOLDER IS EMPTY!
                         this.peer.get_chunks().remove(i);
                         i--;
                     }
@@ -56,6 +60,11 @@ public class DoReclaimThread implements Runnable {
                     continue;
                 }
                 currentFile.delete();
+                File parent_folder = new File("peer" + this.peer.get_id() + "/backup/" 
+                                + this.peer.get_chunks().get(i).get_file_id());
+                if(parent_folder.exists() && parent_folder.isDirectory() && parent_folder.list().length == 0) {
+                    parent_folder.delete();
+                }
                 Message message = new Message("REMOVED", "1.0", this.peer.get_id(), file_id, chunk_n, 0, null);
                 this.peer.sendMessageMC(message.build());
                 this.peer.get_chunks().remove(i);
