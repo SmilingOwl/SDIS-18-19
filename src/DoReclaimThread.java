@@ -21,7 +21,7 @@ public class DoReclaimThread implements Runnable {
                         String file_id = this.peer.get_chunks().get(i).get_file_id();
                         int occupied = this.peer.get_chunks().get(i).get_body().length;
                         this.peer.add_to_free_space(occupied);
-                        System.out.println("After removing chunk on reclaim, I have " + this.peer.get_free_space() + " available");
+                        //System.out.println("After removing chunk on reclaim, I have " + this.peer.get_free_space() + " available");
                         File currentFile = new File("peer" + this.peer.get_id() + "/backup/" 
                                         + this.peer.get_chunks().get(i).get_file_id() + "/chk" + this.peer.get_chunks().get(i).get_chunk_no());
                         if(!currentFile.exists()) {
@@ -31,7 +31,7 @@ public class DoReclaimThread implements Runnable {
                         currentFile.delete();
                         Message message = new Message("REMOVED", "1.0", this.peer.get_id(), file_id, chunk_n, 0, null);
                         this.peer.sendMessageMC(message.build());
-                        //CHECK IF FOLDER IS EMPTY!
+                        //TODO CHECK IF FOLDER IS EMPTY!
                         this.peer.get_chunks().remove(i);
                         i--;
                     }
@@ -48,7 +48,7 @@ public class DoReclaimThread implements Runnable {
                 String chunk_name = this.peer.get_chunks().get(i).get_file_id() + ":" + this.peer.get_chunks().get(i).get_chunk_no();
                 int occupied = this.peer.get_chunks().get(i).get_body().length;
                 this.peer.add_to_free_space(occupied);
-                System.out.println("After removing chunk on reclaim, I have " + this.peer.get_free_space() + " available");
+                //System.out.println("After removing chunk on reclaim, I have " + this.peer.get_free_space() + " available");
                 File currentFile = new File("peer" + this.peer.get_id() + "/backup/" 
                                 + this.peer.get_chunks().get(i).get_file_id() + "/chk" + this.peer.get_chunks().get(i).get_chunk_no());
                 if(!currentFile.exists()) {

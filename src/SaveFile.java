@@ -91,8 +91,6 @@ public class SaveFile {
                 fos.write(chunks.get(i).get_body());
             }
             fos.close();
-            System.out.println(this.id);
-            System.out.println(this.peer.get_myFilesToRestore().get(this.id));
             if(this.peer.get_myFilesToRestore().get(this.id) != null)
                 this.peer.get_myFilesToRestore().remove(this.id);
         } catch(Exception ex) {

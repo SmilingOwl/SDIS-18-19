@@ -91,6 +91,10 @@ class Message {
         return this.type;
     }
 
+    public String get_version() {
+        return this.version;
+    }
+
     public int get_sender_id() {
         return this.sender_id;
     }

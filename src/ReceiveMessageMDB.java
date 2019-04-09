@@ -11,6 +11,9 @@ public class ReceiveMessageMDB implements Runnable {
     public ReceiveMessageMDB(byte[] message, Peer peer) {
         this.peer = peer;
         this.message = new Message(message);
+    }
+
+    public void run() {
         if(this.message.get_type().equals("PUTCHUNK")) {
             if(this.message.get_sender_id() != peer.get_id()) {
                 boolean found = false;
@@ -24,8 +27,20 @@ public class ReceiveMessageMDB implements Runnable {
                         break;
                     }
                 }
-                System.out.println("Free space before saving chunk: " + this.peer.get_free_space());
-                System.out.println("Chunk size: " + this.message.get_body().length);
+                if(this.message.get_version().equals("2.0")) {
+                    String key = this.message.get_file_id() + ":" + this.message.get_chunk_no();
+                    System.out.println("key: " + key);
+                    if(this.peer.get_chunk_occurrences().get(key) != null)
+                        System.out.println("occurrences: " + this.peer.get_chunk_occurrences().get(key).size());
+                    System.out.println("replication degree: " + this.message.get_rep_degree());
+                    if(this.peer.get_chunk_occurrences().get(key) != null &&
+                        this.peer.get_chunk_occurrences().get(key).size() >= this.message.get_rep_degree()) {
+                            found = true;
+                            System.out.println("The chunk has been backed up enough, I'm not storing it!");
+                    }
+                }
+                /*System.out.println("Free space before saving chunk: " + this.peer.get_free_space());
+                System.out.println("Chunk size: " + this.message.get_body().length);*/
                 if(!found && (this.peer.get_free_space() >= this.message.get_body().length)) {
                     send_message = true;
                     Chunk new_chunk = new Chunk(this.message.get_file_id(), this.message.get_rep_degree(), 
@@ -44,7 +59,7 @@ public class ReceiveMessageMDB implements Runnable {
                     }
                     peer.get_chunks().add(new_chunk);
                     peer.add_to_free_space(-1 * new_chunk.get_body().length);
-                    System.out.println("After adding new chunk, I have " + peer.get_free_space() + " available");
+                    //System.out.println("After adding new chunk, I have " + peer.get_free_space() + " available");
                     String key = this.message.get_file_id() + ":" + this.message.get_chunk_no();
                     if(this.peer.get_chunk_occurrences().get(key) != null) {
                         this.peer.get_chunk_occurrences().get(key).add(this.peer.get_id());
@@ -54,17 +69,14 @@ public class ReceiveMessageMDB implements Runnable {
                         senders.add(this.peer.get_id());
                         this.peer.get_chunk_occurrences().put(key, senders);
                     }
-                    System.out.println("After receiving chunk " + key + ", its occurrences are at: " 
-                        + this.peer.get_chunk_occurrences().get(key).size());
+                    //System.out.println("After receiving chunk " + key + ", its occurrences are at: " 
+                      //  + this.peer.get_chunk_occurrences().get(key).size());
                 }
             }
         }
-    }
-
-    public void run() {
         if(this.message.get_sender_id() != peer.get_id() && send_message) {
             String aux = " ";
-            Message send_m = new Message("STORED", "1.0", peer.get_id(), this.message.get_file_id(), 
+            Message send_m = new Message("STORED", peer.get_version(), peer.get_id(), this.message.get_file_id(), 
                                                     this.message.get_chunk_no(), 0, aux.getBytes());
             peer.sendMessageMC(send_m.build());
         }

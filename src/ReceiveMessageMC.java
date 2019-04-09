@@ -32,8 +32,8 @@ public class ReceiveMessageMC implements Runnable {
                 senders.add(m.get_sender_id());
                 this.peer.get_chunk_occurrences().put(key, senders);
             }
-            System.out.println("After receiving STORED, chunk " + key + " occurrences are at: " 
-                        + this.peer.get_chunk_occurrences().get(key).size());
+            //System.out.println("After receiving STORED, chunk " + key + " occurrences are at: " 
+                        //+ this.peer.get_chunk_occurrences().get(key).size());
         } else if(m.get_type().equals("GETCHUNK")) {
             for(int i = 0; i < this.peer.get_chunks().size(); i++) {
                 if(this.peer.get_chunks().get(i).get_file_id().equals(m.get_file_id()) 
@@ -57,7 +57,7 @@ public class ReceiveMessageMC implements Runnable {
                     occupied = this.peer.get_chunks().get(i).get_body().length;
                     this.peer.get_chunks().remove(i);
                     this.peer.add_to_free_space(occupied);
-                    System.out.println("After removing chunk, I have " + this.peer.get_free_space() + " available");
+                    //System.out.println("After removing chunk, I have " + this.peer.get_free_space() + " available");
                     found_chunk = true;
                     i--;
                 }
@@ -76,7 +76,6 @@ public class ReceiveMessageMC implements Runnable {
             }
             file_dir.delete();
         } else if(m.get_type().equals("REMOVED")){
-            System.out.println("received message removed!!");
             if(m.get_sender_id() != this.peer.get_id()) {
                 String chunk_name = m.get_file_id() + ":" + m.get_chunk_no();
                 if(this.peer.get_chunk_occurrences().get(chunk_name) != null) {
@@ -88,13 +87,13 @@ public class ReceiveMessageMC implements Runnable {
                             break;
                         }
                     }
-                    System.out.println("After receiving REMOVED, chunk " + chunk_name + " occurrences are at: " 
-                        + occurrences.size());
+                    //System.out.println("After receiving REMOVED, chunk " + chunk_name + " occurrences are at: " 
+                      //  + occurrences.size());
                     for(int j = 0; j < this.peer.get_chunks().size(); j++) {
                         if(this.peer.get_chunks().get(j).get_file_id().equals(m.get_file_id())
                             && this.peer.get_chunks().get(j).get_chunk_no() == m.get_chunk_no()) {
                             Chunk chunk = this.peer.get_chunks().get(j);
-                            Message message = new Message("PUTCHUNK", "1.0", this.peer.get_id(), chunk.get_file_id(), 
+                            Message message = new Message("PUTCHUNK", this.peer.get_version(), this.peer.get_id(), chunk.get_file_id(), 
                                 chunk.get_chunk_no(), chunk.get_rep_degree(), chunk.get_body());
                             Random rand = new Random();
                             int random_delay = rand.nextInt(401);

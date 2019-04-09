@@ -1,6 +1,6 @@
 /*
-To run: java Peer peer_id remote_obj_name mc_addr mc_port mdb_addr mdb_port
-java Peer 1 obj 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
+To run: java Peer peer_id remote_obj_name version mc_addr mc_port mdb_addr mdb_port
+java Peer 1 obj 1.0 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
  */
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -23,6 +23,7 @@ public class Peer implements RemoteInterface{
     private InetAddress mdr_address;
     private int mdr_port;
     private int id;
+    private String version;
     private ScheduledThreadPoolExecutor thread_executor;
     private ConcurrentHashMap<String, SaveFile> myFiles;
     private ConcurrentHashMap<String, SaveFile> myFilesToRestore;
@@ -32,9 +33,10 @@ public class Peer implements RemoteInterface{
     private int maxFreeSpace = 100000000;
     private int free_space;
 
-    Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
+    Peer(int id, String version, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
                                 int mdr_port, String remote_object_name) {
         this.id = id;
+        this.version = version;
         this.mc_port = mc_port;
         this.mc_address = mc_address;
         this.mc_channel = new MCThread(this.mc_address, this.mc_port, this);
@@ -83,6 +85,10 @@ public class Peer implements RemoteInterface{
         mdb.start();
         mc.start();
         mdr.start();
+    }
+
+    public String get_version() {
+        return this.version; 
     }
 
     public InetAddress get_mdb_address() {
@@ -138,7 +144,7 @@ public class Peer implements RemoteInterface{
     }
 
     public static void main(String[] args) {
-        if(args.length != 8) {
+        if(args.length != 9) {
             System.out.println("Error: Wrong number of arguments");
             return;
         }
@@ -146,9 +152,9 @@ public class Peer implements RemoteInterface{
         InetAddress mc_address = null, mdb_address = null, mdr_address = null;
 
         try {
-            mc_address = InetAddress.getByName(args[2]);
-            mdb_address = InetAddress.getByName(args[4]);
-            mdr_address = InetAddress.getByName(args[6]);
+            mc_address = InetAddress.getByName(args[3]);
+            mdb_address = InetAddress.getByName(args[5]);
+            mdr_address = InetAddress.getByName(args[7]);
         } catch(Exception ex) {
             ex.printStackTrace();
         }
@@ -156,12 +162,17 @@ public class Peer implements RemoteInterface{
         if(mc_address==null)
             System.exit(-1);
 
-        int mc_port = Integer.parseInt(args[3]);
-        int mdb_port = Integer.parseInt(args[5]);
-        int mdr_port = Integer.parseInt(args[7]);
+        int mc_port = Integer.parseInt(args[4]);
+        int mdb_port = Integer.parseInt(args[6]);
+        int mdr_port = Integer.parseInt(args[8]);
         String remote_object_name = args[1];
+        String version = args[2];
+        if(!version.equals("1.0") && !version.equals("2.0")) {
+            System.out.println("Error: Unidentified version: " + version);
+            return;
+        }
         int peer_id = Integer.parseInt(args[0]);
-        Peer peer = new Peer(peer_id, mc_address, mc_port, mdb_address, mdb_port, mdr_address, mdr_port, remote_object_name);
+        Peer peer = new Peer(peer_id, version, mc_address, mc_port, mdb_address, mdb_port, mdr_address, mdr_port, remote_object_name);
     }
 
     public ConcurrentHashMap<String, ArrayList<Integer>> get_chunk_occurrences() {
@@ -196,7 +207,7 @@ public class Peer implements RemoteInterface{
     }
 
     public void backup_chunk(Chunk chunk) {
-        Message message = new Message("PUTCHUNK", "1.0", this.id, chunk.get_file_id(), chunk.get_chunk_no(), chunk.get_rep_degree(), chunk.get_body());
+        Message message = new Message("PUTCHUNK", this.version, this.id, chunk.get_file_id(), chunk.get_chunk_no(), chunk.get_rep_degree(), chunk.get_body());
            
         this.get_thread_executor().execute(
                 new MulticasterPutChunkThread(this.mdb_address, this.mdb_port, message.build(), chunk, this));
@@ -261,7 +272,7 @@ public class Peer implements RemoteInterface{
         //For each chunk it stores:
         for (int i=0; i< myChunks.size(); i++){
             info += "CHUNK ID: " + myChunks.get(i).get_chunk_no() +"\n";
-            info += "CHUNK SIZE: " + myChunks.get(i).get_body().length + "\n";
+            info += "CHUNK SIZE: " + myChunks.get(i).get_body().length / 1000.0 + " KBytes\n";
             String key = myChunks.get(i).get_file_id() + ":" + myChunks.get(i).get_chunk_no();
             int rep_degree = 0;
             if(chunk_occurrences.get(key) != null)
@@ -270,10 +281,10 @@ public class Peer implements RemoteInterface{
         }
 
         // the maximum amount of disk space that can be used to store chunks
-        info += "MAXIMUM AMOUNT OF THE DISK SPACE TO STORE CHUNKS:" + this.maxFreeSpace + "\n";
+        info += "MAXIMUM AMOUNT OF THE DISK SPACE TO STORE CHUNKS:" + this.maxFreeSpace /1000.0 + " KBytes\n";
 
         // the amount of storage used to backup the chunks
-        info += "STORAGE USED TO BACKUP THE CHUNKS: " + get_occupied_space() + "\n";
+        info += "STORAGE USED TO BACKUP THE CHUNKS: " + get_occupied_space() /1000.0 + " KBytes\n";
         return info;
     }
 }
