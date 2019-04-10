@@ -256,14 +256,14 @@ public class Peer implements RemoteInterface{
         // for each file whose backup it has initiated:
         for(SaveFile file : myFiles.values())
         { 
-            info += "FILE PATHNAME: " + "\n";
-            info += "FILE ID: " +"\n";
-            info += "FILE REPLICATION DEGREE: " + "\n";
+            info += "FILE PATHNAME: " + file.get_file().getAbsolutePath() + "\n";
+            info += "FILE ID: "+ file.get_id() +"\n";
+            info += "FILE REPLICATION DEGREE: " + file.get_rep_degree()+ "\n";
 
             for(int i = 0; i < file.get_chunks().size(); i++){
                 String key = file.get_id() + ":" + file.get_chunks().get(i).get_chunk_no();
-                info += "CHUNK ID: " + "\n";
-                info += "CHUNK PERCEIVED REPLICATION DEGREE: " + "\n";
+                info += "CHUNK ID: "+ i+1 + "\n";
+                info += "CHUNK PERCEIVED REPLICATION DEGREE: " + this.chunk_occurrences.get(key) + "\n";
             }
             info += "\n";
         }

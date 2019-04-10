@@ -105,4 +105,12 @@ public class SaveFile {
     public String get_id() {
         return this.id;
     }
+
+    public File get_file(){
+        return this.file;
+    }
+
+    public int get_rep_degree(){
+        return this.rep_degree;
+    }
 }
