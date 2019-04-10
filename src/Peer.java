@@ -1,6 +1,6 @@
 /*
-To run: java Peer peer_id remote_obj_name version mc_addr mc_port mdb_addr mdb_port
-java Peer 1 obj 1.0 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
+To run: java Peer peer_id remote_obj_name version port mc_addr mc_port mdb_addr mdb_port
+java Peer 1 obj 1.0 8888 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
  */
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -32,9 +32,10 @@ public class Peer implements RemoteInterface{
     private ArrayList<Chunk> myChunks;
     private int maxFreeSpace = 100000000;
     private int free_space;
+    private int svc_port;
 
     Peer(int id, String version, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
-                                int mdr_port, String remote_object_name) {
+                                int mdr_port, String remote_object_name, int svc_port) {
         this.id = id;
         this.version = version;
         this.mc_port = mc_port;
@@ -53,6 +54,7 @@ public class Peer implements RemoteInterface{
         this.chunk_occurrences = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
         this.free_space = this.maxFreeSpace;
+        this.svc_port = svc_port;
 
         File peer_dir = new File("peer" + this.id);
         if(!peer_dir.exists()) {
@@ -152,19 +154,20 @@ public class Peer implements RemoteInterface{
         InetAddress mc_address = null, mdb_address = null, mdr_address = null;
 
         try {
-            mc_address = InetAddress.getByName(args[3]);
-            mdb_address = InetAddress.getByName(args[5]);
-            mdr_address = InetAddress.getByName(args[7]);
+            mc_address = InetAddress.getByName(args[4]);
+            mdb_address = InetAddress.getByName(args[6]);
+            mdr_address = InetAddress.getByName(args[8]);
         } catch(Exception ex) {
             ex.printStackTrace();
         }
 
         if(mc_address==null)
             System.exit(-1);
-
-        int mc_port = Integer.parseInt(args[4]);
-        int mdb_port = Integer.parseInt(args[6]);
-        int mdr_port = Integer.parseInt(args[8]);
+//java Peer 1 obj 1.0 8888 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
+        int mc_port = Integer.parseInt(args[5]);
+        int mdb_port = Integer.parseInt(args[7]);
+        int mdr_port = Integer.parseInt(args[9]);
+        int svc_port = Integer.parseInt(args[3]);
         String remote_object_name = args[1];
         String version = args[2];
         if(!version.equals("1.0") && !version.equals("2.0")) {
@@ -172,7 +175,8 @@ public class Peer implements RemoteInterface{
             return;
         }
         int peer_id = Integer.parseInt(args[0]);
-        Peer peer = new Peer(peer_id, version, mc_address, mc_port, mdb_address, mdb_port, mdr_address, mdr_port, remote_object_name);
+        Peer peer = new Peer(peer_id, version, mc_address, mc_port, mdb_address, mdb_port, mdr_address, 
+            mdr_port, remote_object_name, svc_port);
     }
 
     public ConcurrentHashMap<String, ArrayList<Integer>> get_chunk_occurrences() {
@@ -222,11 +226,10 @@ public class Peer implements RemoteInterface{
         int number_of_chunks = file.get_chunks().size();
         SaveFile new_file = new SaveFile(file_name, number_of_chunks, this);
         this.myFilesToRestore.put(file_id, new_file);
+
+         this.get_thread_executor().execute(
+                new DoRestoreThread(this, number_of_chunks, this.svc_port, file_id));
        
-        for(int i = 0; i < number_of_chunks; i++) {
-            Message to_send = new Message("GETCHUNK", "1.0", this.id, file_id, i+1, 0, null);
-            this.sendMessageMC(to_send.build());
-        }
         return "File restored successfully.";
     }
     

@@ -8,15 +8,26 @@ public class MulticasterChunkThread implements Runnable {
     private byte[] message;
     private int chunk_no;
     private String file_id;
+    private int port;
+    private InetAddress address;
     private Peer peer;
+    private String version;
 
-    MulticasterChunkThread(InetAddress mdr_address, int mdr_port, Peer peer, byte[] message, String file_id, int chunk_no) {
+    MulticasterChunkThread(InetAddress mdr_address, int mdr_port, Peer peer, byte[] message, 
+            String file_id, int chunk_no, int port, String address, String version){
         this.mdr_address = mdr_address;
         this.mdr_port = mdr_port;
         this.message = message;
         this.peer = peer;
         this.file_id = file_id;
         this.chunk_no = chunk_no;
+        this.port = port;
+        try {
+            this.address = InetAddress.getByName(address);
+        } catch(Exception ex) {
+            System.out.println("error inet address get name");
+        }
+        this.version = version;
     }
 
     @Override
@@ -28,11 +39,26 @@ public class MulticasterChunkThread implements Runnable {
                 return;
             }
         }
-        try (DatagramSocket socket = new DatagramSocket()) {
-            DatagramPacket sendPort = new DatagramPacket(this.message, this.message.length, this.mdr_address, this.mdr_port);
-            socket.send(sendPort);
-        } catch(IOException ex) {
-            ex.printStackTrace();
-        }
+        if(this.version.equals("1.0")){
+            try (DatagramSocket socket = new DatagramSocket()) {
+                DatagramPacket sendPort = new DatagramPacket(this.message, this.message.length, this.mdr_address, this.mdr_port);
+                socket.send(sendPort);
+            } catch(IOException ex) {
+                ex.printStackTrace();
+            }
+        } else if (this.version.equals("2.0")){
+            try {
+                Socket socket = new Socket(address, port);
+
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+                out.println(this.message);
+                out.close();
+                socket.close();
+            } catch(Exception ex) {
+                System.out.println("Error Socket");
+            }
+        } else
+            System.out.println("Error on MulticasterChunkThread. Unrecognized version.");
     }
 }
