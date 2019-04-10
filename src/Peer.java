@@ -68,11 +68,9 @@ public class Peer implements RemoteInterface{
         } else {
             File[] files = backup_dir.listFiles(); 
             for (int i = 0; i < files.length; i++) {
-                System.out.println(files[i].getName());
                 for(int j = 0; j < files[i].listFiles().length; j++) {
                     String number = files[i].listFiles()[j].getName().substring(3, files[i].listFiles()[j].getName().length());
                     int chunk_number = Integer.parseInt(number);
-                    System.out.println(chunk_number);
                     byte[] body = null;
                     try {
                         body = Files.readAllBytes(new File("peer" + this.id + "/backup/" + files[i].getName() + "/" + files[i].listFiles()[j].getName()).toPath());
@@ -165,7 +163,7 @@ public class Peer implements RemoteInterface{
     }
 
     public static void main(String[] args) {
-        if(args.length != 9) {
+        if(args.length != 10) {
             System.out.println("Error: Wrong number of arguments");
             return;
         }
@@ -182,7 +180,6 @@ public class Peer implements RemoteInterface{
 
         if(mc_address==null)
             System.exit(-1);
-//java Peer 1 obj 1.0 8888 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
         int mc_port = Integer.parseInt(args[5]);
         int mdb_port = Integer.parseInt(args[7]);
         int mdr_port = Integer.parseInt(args[9]);
@@ -190,7 +187,7 @@ public class Peer implements RemoteInterface{
         String remote_object_name = args[1];
         String version = args[2];
         if(!version.equals("1.0") && !version.equals("2.0")) {
-            System.out.println("Error: Unidentified version: " + version);
+            System.out.println("Error: Unidentified version " + version);
             return;
         }
         int peer_id = Integer.parseInt(args[0]);
@@ -251,7 +248,8 @@ public class Peer implements RemoteInterface{
 
          this.get_thread_executor().execute(
                 new DoRestoreThread(this, number_of_chunks, this.svc_port, file_id));
-       
+        
+        System.out.println("Returned from restore of a file.");
         return "File restored successfully.";
     }
     

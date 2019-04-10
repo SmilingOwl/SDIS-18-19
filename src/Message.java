@@ -38,6 +38,10 @@ class Message {
         String msg = new String(message);
         msg = msg.trim();
         String[] message_parts = msg.split(" ");
+        if(message_parts.length <= 4) {
+            System.out.println("Error receiving message.");
+            return;
+        }
         this.type = message_parts[0];
         this.version = message_parts[1];
         this.sender_id = Integer.parseInt(message_parts[2]);

@@ -49,11 +49,7 @@ public class MulticasterChunkThread implements Runnable {
         } else if (this.version.equals("2.0")){
             try {
                 Socket socket = new Socket(address, port);
-
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-
-                out.println(this.message);
-                out.close();
+                socket.getOutputStream().write(this.message);
                 socket.close();
             } catch(Exception ex) {
                 System.out.println("Error Socket");
