@@ -8,7 +8,21 @@ class Message {
     private int sender_id;
     private int chunk_no;
     private int rep_degree;
+    private String address;
+    private int port;
 
+
+    Message(String type, String version, int sender_id, String file_id, int chunk_no, int rep_degree, byte[] body, String address, int port) {
+        this.type = type;
+        this.version = version;
+        this.sender_id = sender_id;
+        this.file_id = file_id;
+        this.chunk_no = chunk_no;
+        this.rep_degree = rep_degree;
+        this.body = body;
+        this.address = address;
+        this.port = port;
+    }
 
     Message(String type, String version, int sender_id, String file_id, int chunk_no, int rep_degree, byte[] body) {
         this.type = type;
@@ -38,6 +52,10 @@ class Message {
         } else if (this.type.equals("CHUNK")) {
             this.separate_body(message);
         }
+        if(this.type.equals("GETCHUNK") && this.version.equals("2.0")) {
+            this.address = message_parts[5];
+            this.port = Integer.parseInt(message_parts[6]);
+        }
     }
 
     public byte[] build() {
@@ -57,7 +75,12 @@ class Message {
             m_body = message.getBytes();
 
         }else if(this.type.equals("GETCHUNK")){
-            message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
+            if(this.version.equals("1.0"))
+                message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
+            else {
+                message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " 
+                    + this.chunk_no + " " + this.address + " " + this.port + " \r\n\r\n";
+            }
             m_body = message.getBytes();
 
         } else if(this.type.equals("CHUNK")){
@@ -113,5 +136,13 @@ class Message {
 
     public byte[] get_body() {
         return this.body;
+    }
+
+    public int get_port() {
+        return this.port;
+    }
+
+    public String get_address() {
+        return this.address;
     }
 }
