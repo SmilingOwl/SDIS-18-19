@@ -29,18 +29,11 @@ public class ReceiveMessageMDB implements Runnable {
                 }
                 if(this.message.get_version().equals("2.0")) {
                     String key = this.message.get_file_id() + ":" + this.message.get_chunk_no();
-                    System.out.println("key: " + key);
-                    if(this.peer.get_chunk_occurrences().get(key) != null)
-                        System.out.println("occurrences: " + this.peer.get_chunk_occurrences().get(key).size());
-                    System.out.println("replication degree: " + this.message.get_rep_degree());
                     if(this.peer.get_chunk_occurrences().get(key) != null &&
                         this.peer.get_chunk_occurrences().get(key).size() >= this.message.get_rep_degree()) {
                             found = true;
-                            System.out.println("The chunk has been backed up enough, I'm not storing it!");
                     }
                 }
-                /*System.out.println("Free space before saving chunk: " + this.peer.get_free_space());
-                System.out.println("Chunk size: " + this.message.get_body().length);*/
                 if(!found && (this.peer.get_free_space() >= this.message.get_body().length)) {
                     send_message = true;
                     Chunk new_chunk = new Chunk(this.message.get_file_id(), this.message.get_rep_degree(), 
@@ -59,7 +52,6 @@ public class ReceiveMessageMDB implements Runnable {
                     }
                     peer.get_chunks().add(new_chunk);
                     peer.add_to_free_space(-1 * new_chunk.get_body().length);
-                    //System.out.println("After adding new chunk, I have " + peer.get_free_space() + " available");
                     String key = this.message.get_file_id() + ":" + this.message.get_chunk_no();
                     if(this.peer.get_chunk_occurrences().get(key) != null) {
                         this.peer.get_chunk_occurrences().get(key).add(this.peer.get_id());
@@ -69,8 +61,6 @@ public class ReceiveMessageMDB implements Runnable {
                         senders.add(this.peer.get_id());
                         this.peer.get_chunk_occurrences().put(key, senders);
                     }
-                    //System.out.println("After receiving chunk " + key + ", its occurrences are at: " 
-                      //  + this.peer.get_chunk_occurrences().get(key).size());
                 }
             }
         }

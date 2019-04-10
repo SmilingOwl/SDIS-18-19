@@ -4,9 +4,7 @@ public class Chunk implements Comparable<Chunk> {
     private String file_id;
     private int chunk_number;
     private byte[] body;
-    private int current_rep_degree;
     private int rep_degree;
-    private ArrayList<Integer> senders_who_stored;
 
     public static final int MAX_SIZE = 64000;
 
@@ -15,7 +13,6 @@ public class Chunk implements Comparable<Chunk> {
         this.rep_degree = rep_degree;
         this.body = body;
         this.chunk_number = chunk_number;
-        this.senders_who_stored = new ArrayList<>();
     }
 
     Chunk(String file_id, byte[] body, int chunk_number){

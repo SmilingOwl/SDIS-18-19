@@ -56,7 +56,7 @@ public class SaveFile {
             file_is.close();
             buffered_is.close();
         } catch(IOException ex) {
-            System.out.println("Error splitting file");
+            System.out.println("Error splitting file.");
             ex.printStackTrace();
         }
         number_of_chunks = this.chunks.size();

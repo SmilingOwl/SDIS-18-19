@@ -21,7 +21,6 @@ public class DoReclaimThread implements Runnable {
                         String file_id = this.peer.get_chunks().get(i).get_file_id();
                         int occupied = this.peer.get_chunks().get(i).get_body().length;
                         this.peer.add_to_free_space(occupied);
-                        //System.out.println("After removing chunk on reclaim, I have " + this.peer.get_free_space() + " available");
                         File currentFile = new File("peer" + this.peer.get_id() + "/backup/" 
                                         + this.peer.get_chunks().get(i).get_file_id() + "/chk" + this.peer.get_chunks().get(i).get_chunk_no());
                         if(!currentFile.exists()) {
@@ -52,7 +51,6 @@ public class DoReclaimThread implements Runnable {
                 String chunk_name = this.peer.get_chunks().get(i).get_file_id() + ":" + this.peer.get_chunks().get(i).get_chunk_no();
                 int occupied = this.peer.get_chunks().get(i).get_body().length;
                 this.peer.add_to_free_space(occupied);
-                //System.out.println("After removing chunk on reclaim, I have " + this.peer.get_free_space() + " available");
                 File currentFile = new File("peer" + this.peer.get_id() + "/backup/" 
                                 + this.peer.get_chunks().get(i).get_file_id() + "/chk" + this.peer.get_chunks().get(i).get_chunk_no());
                 if(!currentFile.exists()) {

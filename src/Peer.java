@@ -9,8 +9,10 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.net.InetAddress;
 import java.io.File;
+import java.nio.file.Files;
 
 public class Peer implements RemoteInterface{
     private MCThread mc_channel;
@@ -61,6 +63,23 @@ public class Peer implements RemoteInterface{
         File backup_dir = new File("peer" + this.id + "/backup");
         if(!backup_dir.exists()) {
             backup_dir.mkdir();
+        } else {
+            File[] files = backup_dir.listFiles(); 
+            for (int i = 0; i < files.length; i++) {
+                System.out.println(files[i].getName());
+                for(int j = 0; j < files[i].listFiles().length; j++) {
+                    String number = files[i].listFiles()[j].getName().substring(3, files[i].listFiles()[j].getName().length());
+                    int chunk_number = Integer.parseInt(number);
+                    System.out.println(chunk_number);
+                    byte[] body = null;
+                    try {
+                        body = Files.readAllBytes(new File("peer" + this.id + "/backup/" + files[i].getName() + "/" + files[i].listFiles()[j].getName()).toPath());
+                    } catch(Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    Chunk chunk_to_add = new Chunk(files[i].getName(), 2, body, chunk_number);
+                }
+            }
         }
         File restore_dir = new File("peer" + this.id + "/restored");
         if(!restore_dir.exists()) {
@@ -191,7 +210,8 @@ public class Peer implements RemoteInterface{
         mc_channel.sendMessage(message);
     }
 
-    public String backup_file(String file_name, int rep_degree) throws RemoteException {
+    public synchronized String backup_file(String file_name, int rep_degree) throws RemoteException {
+        System.out.println("Initiated backup of a file.");
         
         SaveFile file = new SaveFile(file_name, rep_degree);
         if (this.myFiles.get(file_name) != null) {
@@ -200,9 +220,10 @@ public class Peer implements RemoteInterface{
         this.myFiles.put(file_name, file);
         ArrayList<Chunk> chunks_to_send = file.get_chunks();
       
-        for(int i  = 0; i < chunks_to_send.size(); i++) {
+        for(int i = 0; i < chunks_to_send.size(); i++) {
             this.backup_chunk(chunks_to_send.get(i));
         }
+        System.out.println("Returned from backup of a file.");
         return "Backup executed successfully.";
     }
 
@@ -214,6 +235,7 @@ public class Peer implements RemoteInterface{
     }
     
     public String restore_file(String file_name) throws RemoteException {
+        System.out.println("Initiated restore of a file.");
         SaveFile file = this.myFiles.get(file_name);      
         if(file == null)
             return "File not found.";
@@ -227,10 +249,12 @@ public class Peer implements RemoteInterface{
             Message to_send = new Message("GETCHUNK", "1.0", this.id, file_id, i+1, 0, null);
             this.sendMessageMC(to_send.build());
         }
+        System.out.println("Returned from restore of a file.");
         return "File restored successfully.";
     }
     
     public String delete_file(String file_name) throws RemoteException {
+        System.out.println("Initiated delete of a file.");
         SaveFile file = this.myFiles.get(file_name);       
         if(file == null)
             return "File not found.";
@@ -239,20 +263,29 @@ public class Peer implements RemoteInterface{
         Message to_send = new Message("DELETE", "1.0", this.id, file_id, 0, 0, null);
         this.sendMessageMC(to_send.build());
 
+        int num_chunks = this.myFiles.get(file_name).get_chunks().size();
+
         this.myFiles.remove(file_name);
-        this.chunk_occurrences.remove(file_id);
+        for(int i = 0; i < num_chunks; i++) {
+            this.chunk_occurrences.remove(file_id + ":" + (i+1));
+        }
+        System.out.println("Returned from delete of a file.");
         return "File deleted successfully.";
     }
 
     public String reclaim(int max_ammount) throws RemoteException {
+        System.out.println("Initiated reclaim.");
         this.maxFreeSpace = max_ammount;
         this.free_space = this.maxFreeSpace - this.get_occupied_space();
         this.get_thread_executor().execute(new DoReclaimThread(this));
+        System.out.println("Returned from reclaim.");
         return "initiated reclaim";
     }
 
     public String state() throws RemoteException {
-        String info = "Files backed up: \n\n";
+        String info = "";
+        if(!myFiles.isEmpty())
+            info += "Files backed up: \n\n";
         // for each file whose backup it has initiated:
         for(SaveFile file : myFiles.values())
         { 
@@ -262,13 +295,14 @@ public class Peer implements RemoteInterface{
 
             for(int i = 0; i < file.get_chunks().size(); i++){
                 String key = file.get_id() + ":" + file.get_chunks().get(i).get_chunk_no();
-                info += "CHUNK ID: "+ i+1 + "\n";
-                info += "CHUNK PERCEIVED REPLICATION DEGREE: " + this.chunk_occurrences.get(key) + "\n";
+                info += "CHUNK ID: "+ file.get_chunks().get(i).get_chunk_no() + "\n";
+                info += "CHUNK PERCEIVED REPLICATION DEGREE: " + this.chunk_occurrences.get(key).size() + "\n";
             }
             info += "\n";
         }
 
-        info += "\nStored chunks: \n\n";
+        if(myChunks.size() > 0)
+            info += "\nStored chunks: \n\n";
         //For each chunk it stores:
         for (int i=0; i< myChunks.size(); i++){
             info += "CHUNK ID: " + myChunks.get(i).get_chunk_no() +"\n";
