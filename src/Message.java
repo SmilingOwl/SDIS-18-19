@@ -46,7 +46,7 @@ class Message {
         this.version = message_parts[1];
         this.sender_id = Integer.parseInt(message_parts[2]);
         this.file_id = message_parts[3];
-        if(!this.type.equals("DELETE"))
+        if(!this.type.equals("DELETE") && !this.type.equals("DELETED"))
             this.chunk_no = Integer.parseInt(message_parts[4]);
         
         if(this.type.equals("PUTCHUNK")) {
@@ -99,6 +99,10 @@ class Message {
             System.arraycopy(this.body, 0, m_body, m.length, this.body.length);
 
         }else if(this.type.equals("DELETE")){
+            message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + " \r\n\r\n";
+            m_body = message.getBytes();
+            
+        }else if(this.type.equals("DELETED")){
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + " \r\n\r\n";
             m_body = message.getBytes();
             

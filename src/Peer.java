@@ -20,6 +20,7 @@ public class Peer implements RemoteInterface{
     private MCThread mc_channel;
     private MDBThread mdb_channel;
     private MRThread mdr_channel;
+    private SendDeleteThread delete_thread;
     private InetAddress mc_address;
     private int mc_port;
     private InetAddress mdb_address;
@@ -31,6 +32,7 @@ public class Peer implements RemoteInterface{
     private ScheduledThreadPoolExecutor thread_executor;
     private ConcurrentHashMap<String, SaveFile> myFiles;
     private ConcurrentHashMap<String, SaveFile> myFilesToRestore;
+    private ConcurrentHashMap<String, ArrayList<Integer>> myFilesToDelete;
     private ArrayList<String> myChunksNotToSend;
     private ConcurrentHashMap<String, ArrayList<Integer>> chunk_occurrences;
     private ArrayList<Chunk> myChunks;
@@ -54,11 +56,13 @@ public class Peer implements RemoteInterface{
         this.myChunks = new ArrayList<>();
         this.myFiles = new ConcurrentHashMap<String, SaveFile>();
         this.myFilesToRestore = new ConcurrentHashMap<String, SaveFile>();
+        this.myFilesToDelete = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.myChunksNotToSend = new ArrayList<String>();
         this.chunk_occurrences = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
         this.free_space = this.maxFreeSpace;
         this.svc_port = svc_port;
+        this.delete_thread = null;
 
         File peer_dir = new File("peer" + this.id);
         if(!peer_dir.exists()) {
@@ -124,6 +128,7 @@ public class Peer implements RemoteInterface{
                         System.out.println("Error in Files.readAllBytes.");
                     }
                     Chunk chunk_to_add = new Chunk(files[i].getName(), 2, body, chunk_number);
+                    this.myChunks.add(chunk_to_add);
                 }
             }
         }
@@ -149,6 +154,13 @@ public class Peer implements RemoteInterface{
         mdb.start();
         mc.start();
         mdr.start();
+
+
+        if(this.version.equals("2.0")) {
+            this.delete_thread = new SendDeleteThread(this, this.myFilesToDelete);
+            Thread delete = new Thread(this.delete_thread);
+            delete.start();
+        }
     }
 
     public String get_version() {
@@ -252,6 +264,10 @@ public class Peer implements RemoteInterface{
         return this.myFilesToRestore;
     }
 
+    public ConcurrentHashMap<String, ArrayList<Integer>> get_myFilesToDelete() {
+        return this.myFilesToDelete;
+    }
+
     public void sendMessageMC(byte[] message) {
         mc_channel.sendMessage(message);
     }
@@ -304,8 +320,25 @@ public class Peer implements RemoteInterface{
         if(file == null)
             return "File not found.";
         String file_id = file.get_id();
+
+        if(this.version.equals("2.0")) {
+            ArrayList<Integer> senders = new ArrayList<Integer>();
+
+            for (String key : this.chunk_occurrences.keySet()) {
+                if(file_id.equals(key.split(":")[0])) {
+                    for(int i = 0; i < this.chunk_occurrences.get(key).size(); i++){
+                        if(!senders.contains(this.chunk_occurrences.get(key).get(i))) 
+                            senders.add(this.chunk_occurrences.get(key).get(i));
+                    }
+                }
+            }
+
+            if(!senders.isEmpty()) {
+                this.myFilesToDelete.put(file_id, senders);
+            }
+        }
         
-        Message to_send = new Message("DELETE", "1.0", this.id, file_id, 0, 0, null);
+        Message to_send = new Message("DELETE", this.version, this.id, file_id, 0, 0, null);
         this.sendMessageMC(to_send.build());
 
         int num_chunks = this.myFiles.get(file_name).get_chunks().size();

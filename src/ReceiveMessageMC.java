@@ -85,7 +85,19 @@ public class ReceiveMessageMC implements Runnable {
                     this.peer.get_chunk_occurrences().remove(key);
                 }
             }
-            this.get_thread_executor().execute(new ManageDataFilesThread(this.peer));
+            this.peer.get_thread_executor().execute(new ManageDataFilesThread(this.peer));
+            Message to_send = new Message("DELETED", "2.0", this.peer.get_id(), m.get_file_id(), 0, 0, null);
+            this.peer.sendMessageMC(to_send.build());
+        } else if(m.get_type().equals("DELETED")) {
+            if(this.peer.get_myFilesToDelete().get(m.get_file_id()) != null){
+                ArrayList<Integer> senders = this.peer.get_myFilesToDelete().get(m.get_file_id());
+                if(senders.contains(m.get_sender_id())) {
+                    senders.remove(senders.indexOf(m.get_sender_id()));
+                }
+                if(senders.size() == 0) {
+                    this.peer.get_myFilesToDelete().remove(m.get_file_id());
+                }
+            }
         } else if(m.get_type().equals("REMOVED")){
             if(m.get_sender_id() != this.peer.get_id()) {
                 String chunk_name = m.get_file_id() + ":" + m.get_chunk_no();
