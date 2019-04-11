@@ -18,7 +18,6 @@ public class DoRestoreThread implements Runnable {
     }
 
     public void run() {
-        System.out.println("On DoRestoreThread");
         for(int i = 0; i < this.number_of_chunks; i++) {
             if(this.peer.get_version().equals("1.0")) {
                 Message to_send = new Message("GETCHUNK", "1.0", this.peer.get_id(), file_id, i+1, 0, null);
@@ -46,8 +45,6 @@ public class DoRestoreThread implements Runnable {
                     }
 
                     byte[] message_data = buffer.toByteArray();
-                    // System.out.println("available: " + stream.available());
-                    // stream.read(data);
                     svc_socket.close();
                     socket.close();
                     Message message = new Message(message_data);

@@ -25,7 +25,7 @@ public class MulticasterChunkThread implements Runnable {
         try {
             this.address = InetAddress.getByName(address);
         } catch(Exception ex) {
-            System.out.println("error inet address get name");
+            System.out.println("Error inet address get name");
         }
         this.version = version;
     }
@@ -51,8 +51,11 @@ public class MulticasterChunkThread implements Runnable {
                 Socket socket = new Socket(address, port);
                 socket.getOutputStream().write(this.message);
                 socket.close();
+                Message to_send = new Message("SENTCHUNK", "2.0", this.peer.get_id(), this.file_id, this.chunk_no, 0, null);
+                this.peer.sendMessageMC(to_send.build());
             } catch(Exception ex) {
                 System.out.println("Error Socket");
+                ex.printStackTrace();
             }
         } else
             System.out.println("Error on MulticasterChunkThread. Unrecognized version.");

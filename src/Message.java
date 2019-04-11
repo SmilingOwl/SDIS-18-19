@@ -38,7 +38,7 @@ class Message {
         String msg = new String(message);
         msg = msg.trim();
         String[] message_parts = msg.split(" ");
-        if(message_parts.length <= 4) {
+        if(message_parts.length <= 3) {
             System.out.println("Error receiving message.");
             return;
         }
@@ -78,13 +78,17 @@ class Message {
             message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
             m_body = message.getBytes();
 
-        }else if(this.type.equals("GETCHUNK")){
+        } else if(this.type.equals("GETCHUNK")){
             if(this.version.equals("1.0"))
                 message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
             else {
                 message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " 
                     + this.chunk_no + " " + this.address + " " + this.port + " \r\n\r\n";
             }
+            m_body = message.getBytes();
+
+        } else if (this.type.equals("SENTCHUNK")){
+            message = this.type + " " + this.version + " " + this.sender_id + " " + this.file_id + " " + this.chunk_no + " \r\n\r\n";
             m_body = message.getBytes();
 
         } else if(this.type.equals("CHUNK")){

@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.net.InetAddress;
 import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.nio.file.Files;
 
 public class Peer implements RemoteInterface{
@@ -61,6 +63,50 @@ public class Peer implements RemoteInterface{
         File peer_dir = new File("peer" + this.id);
         if(!peer_dir.exists()) {
             peer_dir.mkdir();
+        }
+        File data_folder = new File("peer" + this.id + "/data");
+        if(!data_folder.exists()) {
+            data_folder.mkdir();
+            try { 
+                File data_file = new File("peer" + this.id + "/data/occurrences.txt");
+                data_file.createNewFile(); 
+                File data_file2 = new File("peer" + this.id + "/data/files.txt");
+                data_file2.createNewFile(); 
+            }
+            catch(Exception ex) {
+                System.out.println("ERROR: Creating data files");
+            }
+        } else {
+            try {
+                FileReader file_reader = new FileReader("peer" + this.id + "/data/occurrences.txt");
+                BufferedReader reader =  new BufferedReader(file_reader);
+                String next_element = reader.readLine();
+                while(next_element != null){
+                    String[] elements = next_element.split(" ");
+                    String key = elements[0];
+                    ArrayList<Integer> occurrences = new ArrayList<Integer>();
+                    for(int i = 1 ; i < elements.length; i++) {
+                        occurrences.add(Integer.parseInt(elements[i]));
+                    }
+                    this.chunk_occurrences.put(key, occurrences);
+                    next_element = reader.readLine();
+                } 
+                file_reader.close();
+                reader.close();
+
+                BufferedReader reader2 =  new BufferedReader(new FileReader("peer" + this.id + "/data/files.txt"));
+                next_element = reader2.readLine();
+                while(next_element != null){
+                    String[] elements = next_element.split(" ");
+                    String key = elements[0];
+                    SaveFile new_file = new SaveFile(elements[0], elements[1], Integer.parseInt(elements[2]),  Integer.parseInt(elements[3])); 
+                    this.myFiles.put(key, new_file);
+                    next_element = reader2.readLine();
+                } 
+                reader2.close();
+            } catch(Exception ex) {
+                System.out.println("Error reading data files");
+            }
         }
         File backup_dir = new File("peer" + this.id + "/backup");
         if(!backup_dir.exists()) {
@@ -268,6 +314,7 @@ public class Peer implements RemoteInterface{
         this.myFiles.remove(file_name);
         for(int i = 0; i < num_chunks; i++) {
             this.chunk_occurrences.remove(file_id + ":" + (i+1));
+            this.get_thread_executor().execute(new ManageDataFilesThread(this));
         }
         System.out.println("Returned from delete of a file.");
         return "File deleted successfully.";
@@ -289,7 +336,10 @@ public class Peer implements RemoteInterface{
         // for each file whose backup it has initiated:
         for(SaveFile file : myFiles.values())
         { 
-            info += "FILE PATHNAME: " + file.get_file().getAbsolutePath() + "\n";
+            String pathname = file.get_name();
+            if(file.get_file() != null)
+                pathname = file.get_file().getAbsolutePath();
+            info += "FILE PATHNAME: " + pathname + "\n";
             info += "FILE ID: "+ file.get_id() +"\n";
             info += "FILE REPLICATION DEGREE: " + file.get_rep_degree()+ "\n";
 
@@ -305,9 +355,9 @@ public class Peer implements RemoteInterface{
             info += "\nStored chunks: \n\n";
         //For each chunk it stores:
         for (int i=0; i< myChunks.size(); i++){
-            info += "CHUNK ID: " + myChunks.get(i).get_chunk_no() +"\n";
-            info += "CHUNK SIZE: " + myChunks.get(i).get_body().length / 1000.0 + " KBytes\n";
             String key = myChunks.get(i).get_file_id() + ":" + myChunks.get(i).get_chunk_no();
+            info += "CHUNK ID: " + key +"\n";
+            info += "CHUNK SIZE: " + myChunks.get(i).get_body().length / 1000.0 + " KBytes\n";
             int rep_degree = 0;
             if(chunk_occurrences.get(key) != null)
                 rep_degree = chunk_occurrences.get(key).size();
@@ -315,7 +365,7 @@ public class Peer implements RemoteInterface{
         }
 
         // the maximum amount of disk space that can be used to store chunks
-        info += "MAXIMUM AMOUNT OF THE DISK SPACE TO STORE CHUNKS:" + this.maxFreeSpace /1000.0 + " KBytes\n";
+        info += "\nMAXIMUM AMOUNT OF THE DISK SPACE TO STORE CHUNKS:" + this.maxFreeSpace /1000.0 + " KBytes\n";
 
         // the amount of storage used to backup the chunks
         info += "STORAGE USED TO BACKUP THE CHUNKS: " + get_occupied_space() /1000.0 + " KBytes\n";

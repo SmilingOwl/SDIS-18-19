@@ -62,6 +62,18 @@ public class SaveFile {
         number_of_chunks = this.chunks.size();
     }
 
+    SaveFile(String file_name, String id, int number_of_chunks, int rep_degree) {
+        this.file_name = file_name;
+        this.id = id;
+        this.number_of_chunks = number_of_chunks;
+        this.chunks = new ArrayList<Chunk>();
+        for(int i = 0; i < number_of_chunks; i++) {
+            Chunk to_add = new Chunk(id, rep_degree, null, i+1);
+            this.chunks.add(to_add);
+        }
+        this.rep_degree = rep_degree;
+    }
+
     SaveFile(String file_name, int number_of_chunks, Peer peer) {
         this.file_name = file_name;
         this.number_of_chunks = number_of_chunks;
@@ -77,6 +89,10 @@ public class SaveFile {
     }
 
     public void add_chunk(byte[] chunk, int chunk_no) {
+        for(int i = 0; i < this.chunks.size(); i++) {
+            if(this.chunks.get(i).get_chunk_no() == chunk_no)
+                return;
+        }
         Chunk new_chunk = new Chunk(this.id, chunk, chunk_no);
         this.chunks.add(new_chunk);
         if(this.chunks.size() == this.number_of_chunks) 
@@ -108,6 +124,10 @@ public class SaveFile {
 
     public File get_file(){
         return this.file;
+    }
+
+    public String get_name(){
+        return this.file_name;
     }
 
     public int get_rep_degree(){

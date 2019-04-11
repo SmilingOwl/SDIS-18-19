@@ -25,12 +25,14 @@ public class ReceiveMessageMC implements Runnable {
                 }
                 if(!found) {
                     senders.add(m.get_sender_id());
+                    this.peer.get_thread_executor().execute(new ManageDataFilesThread(this.peer));
                 }
             }
             else {
                 ArrayList<Integer> senders = new ArrayList<>();
                 senders.add(m.get_sender_id());
                 this.peer.get_chunk_occurrences().put(key, senders);
+                this.peer.get_thread_executor().execute(new ManageDataFilesThread(this.peer));
             }
         } else if(m.get_type().equals("GETCHUNK")) {
             for(int i = 0; i < this.peer.get_chunks().size(); i++) {
@@ -46,6 +48,11 @@ public class ReceiveMessageMC implements Runnable {
                         random_delay, TimeUnit.MILLISECONDS);
                         break;
                 }
+            }
+        } else if(m.get_type().equals("SENTCHUNK")) {
+            if(this.peer.get_myFilesToRestore().get(m.get_file_id()) == null && 
+                    this.peer.get_id() != m.get_sender_id()){
+                this.peer.add_chunk_not_to_send(m.get_file_id(), m.get_chunk_no());
             }
         } else if(m.get_type().equals("DELETE")){
             boolean found_chunk = false;
@@ -84,6 +91,7 @@ public class ReceiveMessageMC implements Runnable {
                             break;
                         }
                     }
+                    this.peer.get_thread_executor().execute(new ManageDataFilesThread(this.peer));
                     for(int j = 0; j < this.peer.get_chunks().size(); j++) {
                         if(this.peer.get_chunks().get(j).get_file_id().equals(m.get_file_id())
                             && this.peer.get_chunks().get(j).get_chunk_no() == m.get_chunk_no()) {

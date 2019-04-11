@@ -55,11 +55,13 @@ public class ReceiveMessageMDB implements Runnable {
                     String key = this.message.get_file_id() + ":" + this.message.get_chunk_no();
                     if(this.peer.get_chunk_occurrences().get(key) != null) {
                         this.peer.get_chunk_occurrences().get(key).add(this.peer.get_id());
+                        this.peer.get_thread_executor().execute(new ManageDataFilesThread(this.peer));
                     }
                     else {
                         ArrayList<Integer> senders = new ArrayList<>();
                         senders.add(this.peer.get_id());
                         this.peer.get_chunk_occurrences().put(key, senders);
+                        this.peer.get_thread_executor().execute(new ManageDataFilesThread(this.peer));
                     }
                 }
             }
