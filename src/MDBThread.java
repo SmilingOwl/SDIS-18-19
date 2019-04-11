@@ -17,7 +17,7 @@ public class MDBThread implements Runnable {
             this.mdb_socket = new MulticastSocket(this.mdb_port);
             this.mdb_socket.joinGroup(this.mdb_address);
         } catch(IOException ex) {
-            ex.printStackTrace();
+           System.out.println("Error joining mcast in MDBThread.");
         }
     }
     
@@ -34,7 +34,7 @@ public class MDBThread implements Runnable {
                 this.peer.get_thread_executor().schedule(new ReceiveMessageMDB(buffer, this.peer), random_delay, TimeUnit.MILLISECONDS);
             }
         } catch(IOException ex) {
-            ex.printStackTrace();
+            System.out.println("Error receiving packet in MDBThread.");
         }
     }
 }

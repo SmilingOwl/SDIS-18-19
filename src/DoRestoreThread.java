@@ -58,7 +58,6 @@ public class DoRestoreThread implements Runnable {
                     }
                 } catch(Exception ex) {
                     System.out.println("ERROR TCP: on ServerSocket");
-                    ex.printStackTrace();
                 }
             }
         }

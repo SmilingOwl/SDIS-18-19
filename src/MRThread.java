@@ -16,7 +16,7 @@ public class MRThread implements Runnable {
             this.mdr_socket = new MulticastSocket(this.mdr_port);
             this.mdr_socket.joinGroup(this.mdr_address);
         } catch(IOException ex) {
-            ex.printStackTrace();
+            System.out.println("Error joining mcast in MRThread.");
         }
     }
 
@@ -31,7 +31,7 @@ public class MRThread implements Runnable {
                 this.peer.get_thread_executor().execute(new ReceiveMessageMDR(buffer, this.peer));
             }
         } catch(IOException ex) {
-            ex.printStackTrace();
+            System.out.println("Error receiving packet in MRThread.");
         }
     }
 }

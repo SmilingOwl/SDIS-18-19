@@ -38,7 +38,7 @@ public class MulticasterPutChunkThread implements Runnable {
             try {
                 Thread.sleep(1000);
             } catch (Exception ex) {
-                ex.printStackTrace();
+                System.out.println("Error on sleep.");
             }
             if(this.peer.get_chunk_occurrences().get(key) != null)
                 occurrences = this.peer.get_chunk_occurrences().get(key).size();
@@ -51,7 +51,7 @@ public class MulticasterPutChunkThread implements Runnable {
             DatagramPacket sendPort = new DatagramPacket(this.message, this.message.length, this.mc_address, this.mc_port);
             socket.send(sendPort);
         } catch(IOException ex) {
-            ex.printStackTrace();
+            System.out.println("Error sending packet in PUTCHUNK.");
         }
     }
 }

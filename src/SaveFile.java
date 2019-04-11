@@ -34,7 +34,7 @@ public class SaveFile {
             }
             this.id = hex_string.toString();
         } catch(Exception e) {
-            e.printStackTrace();
+            System.out.println("Error in SHA-256.");
         }
 
         this.chunks = new ArrayList<>();
@@ -57,7 +57,6 @@ public class SaveFile {
             buffered_is.close();
         } catch(IOException ex) {
             System.out.println("Error splitting file.");
-            ex.printStackTrace();
         }
         number_of_chunks = this.chunks.size();
     }
@@ -84,7 +83,7 @@ public class SaveFile {
             File file = new File("peer" + this.peer.get_id() + "/restored/" + this.file_name);
             file.createNewFile();            
         } catch(Exception ex) {
-            ex.printStackTrace();
+            System.out.println("Error creating restored file.");
         }
     }
 
@@ -110,7 +109,7 @@ public class SaveFile {
             if(this.peer.get_myFilesToRestore().get(this.id) != null)
                 this.peer.get_myFilesToRestore().remove(this.id);
         } catch(Exception ex) {
-            ex.printStackTrace();
+            System.out.println("Error in writing to restored file.");
         }
     }
 

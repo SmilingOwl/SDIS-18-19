@@ -44,7 +44,7 @@ public class MulticasterChunkThread implements Runnable {
                 DatagramPacket sendPort = new DatagramPacket(this.message, this.message.length, this.mdr_address, this.mdr_port);
                 socket.send(sendPort);
             } catch(IOException ex) {
-                ex.printStackTrace();
+                System.out.println("Error sending packet in Chunk.");
             }
         } else if (this.version.equals("2.0")){
             try {
@@ -55,7 +55,6 @@ public class MulticasterChunkThread implements Runnable {
                 this.peer.sendMessageMC(to_send.build());
             } catch(Exception ex) {
                 System.out.println("Error Socket");
-                ex.printStackTrace();
             }
         } else
             System.out.println("Error on MulticasterChunkThread. Unrecognized version.");

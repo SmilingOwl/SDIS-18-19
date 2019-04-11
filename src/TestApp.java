@@ -46,8 +46,7 @@ public class TestApp {
             }
             System.out.println(response);
         } catch (Exception e) {
-            System.err.println("Client exception: " + e.toString());
-            e.printStackTrace();
+            System.err.println("Client exception: object not bound");
         }
     }
 }

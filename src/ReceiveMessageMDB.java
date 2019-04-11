@@ -48,7 +48,7 @@ public class ReceiveMessageMDB implements Runnable {
                         fos.write(new_chunk.get_body());
                         fos.close();
                     } catch(IOException ex) {
-                        ex.printStackTrace();
+                        System.out.println("Error in creating chunk files.");
                     }
                     peer.get_chunks().add(new_chunk);
                     peer.add_to_free_space(-1 * new_chunk.get_body().length);

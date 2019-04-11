@@ -16,7 +16,7 @@ public class MCThread implements Runnable {
             this.mc_socket = new MulticastSocket(this.mc_port);
             this.mc_socket.joinGroup(this.mc_address);
         } catch(IOException ex) {
-            ex.printStackTrace();
+            System.out.println("Error joining mcast in MCThread");
         }
     }
 
@@ -30,7 +30,7 @@ public class MCThread implements Runnable {
                 this.peer.get_thread_executor().execute(new ReceiveMessageMC(msgPacket.getData(), this.peer));
             }
         } catch(IOException ex) {
-            ex.printStackTrace();
+            System.out.println("Error receiving packet in MCThread.");
         }
     }
 
@@ -39,7 +39,7 @@ public class MCThread implements Runnable {
             DatagramPacket sendPort = new DatagramPacket(buf, buf.length, this.mc_address, this.mc_port);
             socket.send(sendPort);
         } catch(IOException ex) {
-            ex.printStackTrace();
+            System.out.println("Error sending packet in MCThread.");
         }
     }
 }

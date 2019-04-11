@@ -1,6 +1,6 @@
 /*
-To run: java Peer peer_id remote_obj_name version port mc_addr mc_port mdb_addr mdb_port
-java Peer 1 obj 1.0 8888 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
+To run: java Peer <peer_id> <remote_obj_name> <version> <port> <mc_addr> <mc_port> <mdb_addr> <mdb_port> <mdr_addr> <mdr_port>
+java Peer 1 obj1 1.0 8888 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
  */
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -121,7 +121,7 @@ public class Peer implements RemoteInterface{
                     try {
                         body = Files.readAllBytes(new File("peer" + this.id + "/backup/" + files[i].getName() + "/" + files[i].listFiles()[j].getName()).toPath());
                     } catch(Exception ex) {
-                        ex.printStackTrace();
+                        System.out.println("Error in Files.readAllBytes.");
                     }
                     Chunk chunk_to_add = new Chunk(files[i].getName(), 2, body, chunk_number);
                 }
@@ -136,11 +136,10 @@ public class Peer implements RemoteInterface{
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(this, 0);
             Registry registry = LocateRegistry.getRegistry();
             registry.bind(remote_object_name, stub);
-            System.out.println("Peer ready");
+            System.out.println("Peer ready.");
 
         } catch (Exception e) {
-            System.err.println("Peer exception: " + e.toString());
-            e.printStackTrace();
+            System.err.println("Peer exception: Object already bound.");
         }
 
         Thread mdb = new Thread(this.mdb_channel);
@@ -221,7 +220,7 @@ public class Peer implements RemoteInterface{
             mdb_address = InetAddress.getByName(args[6]);
             mdr_address = InetAddress.getByName(args[8]);
         } catch(Exception ex) {
-            ex.printStackTrace();
+            System.out.println("Error in getting InetAddress.");
         }
 
         if(mc_address==null)

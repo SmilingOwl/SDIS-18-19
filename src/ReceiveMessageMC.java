@@ -79,6 +79,13 @@ public class ReceiveMessageMC implements Runnable {
                 currentFile.delete();
             }
             file_dir.delete();
+            for (String key : this.peer.get_chunk_occurrences().keySet()) {
+                String[] ids = key.split(":");
+                if(ids[0].equals(m.get_file_id())) {
+                    this.peer.get_chunk_occurrences().remove(key);
+                }
+            }
+            this.get_thread_executor().execute(new ManageDataFilesThread(this.peer));
         } else if(m.get_type().equals("REMOVED")){
             if(m.get_sender_id() != this.peer.get_id()) {
                 String chunk_name = m.get_file_id() + ":" + m.get_chunk_no();
