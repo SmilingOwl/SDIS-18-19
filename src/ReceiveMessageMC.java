@@ -86,8 +86,10 @@ public class ReceiveMessageMC implements Runnable {
                 }
             }
             this.peer.get_thread_executor().execute(new ManageDataFilesThread(this.peer));
-            Message to_send = new Message("DELETED", "2.0", this.peer.get_id(), m.get_file_id(), 0, 0, null);
-            this.peer.sendMessageMC(to_send.build());
+            if(m.get_version().equals("2.0")) {
+                Message to_send = new Message("DELETED", "2.0", this.peer.get_id(), m.get_file_id(), 0, 0, null);
+                this.peer.sendMessageMC(to_send.build());
+            }
         } else if(m.get_type().equals("DELETED")) {
             if(this.peer.get_myFilesToDelete().get(m.get_file_id()) != null){
                 ArrayList<Integer> senders = this.peer.get_myFilesToDelete().get(m.get_file_id());
