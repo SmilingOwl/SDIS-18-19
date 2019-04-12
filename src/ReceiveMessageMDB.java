@@ -68,7 +68,7 @@ public class ReceiveMessageMDB implements Runnable {
         }
         if(this.message.get_sender_id() != peer.get_id() && send_message) {
             String aux = " ";
-            Message send_m = new Message("STORED", peer.get_version(), peer.get_id(), this.message.get_file_id(), 
+            Message send_m = new Message("STORED", this.message.get_version(), peer.get_id(), this.message.get_file_id(), 
                                                     this.message.get_chunk_no(), 0, aux.getBytes());
             peer.sendMessageMC(send_m.build());
         }

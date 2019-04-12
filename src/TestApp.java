@@ -8,8 +8,9 @@ import java.rmi.registry.Registry;
 
 public class TestApp {
     public static void main(String[] args) {
-        if(args.length < 2 && args.length >4) {
+        if(args.length < 2 || args.length > 4) {
             System.out.println("Error: Wrong number of arguments");
+            System.out.println("Usage: java TestApp <hostname>:<remote_object_name> <sub_protocol> <opnd_1> <opnd_2>");
             return;
         }
         String[] peer_ap = args[0].split(":");
@@ -25,13 +26,23 @@ public class TestApp {
             RemoteInterface stub = (RemoteInterface) registry.lookup(remote_object_name);
             if(args[1].equals("BACKUP")){
                 int rep_degree = Integer.parseInt(args[3]);
-                response = stub.backup_file(file_path, rep_degree);
+                response = stub.backup_file(file_path, rep_degree, "1.0");
+
+            } else if(args[1].equals("BACKUPENH")){
+                int rep_degree = Integer.parseInt(args[3]);
+                response = stub.backup_file(file_path, rep_degree, "2.0");
 
             } else if(args[1].equals("RESTORE")){
-                response = stub.restore_file(file_path);
+                response = stub.restore_file(file_path, "1.0");
+
+            } else if(args[1].equals("RESTOREENH")){
+                response = stub.restore_file(file_path, "2.0");
 
             } else if(args[1].equals("DELETE")){
-                response = stub.delete_file(file_path);
+                response = stub.delete_file(file_path, "1.0");
+
+            } else if(args[1].equals("DELETEENH")){
+                response = stub.delete_file(file_path, "2.0");
 
             } else if(args[1].equals("RECLAIM")){
                 int max_ammount = Integer.parseInt(file_path);
@@ -46,7 +57,7 @@ public class TestApp {
             }
             System.out.println(response);
         } catch (Exception e) {
-            System.err.println("Client exception: object not bound");
+            System.err.println("Client exception: problem with rmi.");
         }
     }
 }

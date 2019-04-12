@@ -115,7 +115,7 @@ public class ReceiveMessageMC implements Runnable {
                         if(this.peer.get_chunks().get(j).get_file_id().equals(m.get_file_id())
                             && this.peer.get_chunks().get(j).get_chunk_no() == m.get_chunk_no()) {
                             Chunk chunk = this.peer.get_chunks().get(j);
-                            Message message = new Message("PUTCHUNK", this.peer.get_version(), this.peer.get_id(), chunk.get_file_id(), 
+                            Message message = new Message("PUTCHUNK", "1.0", this.peer.get_id(), chunk.get_file_id(), 
                                 chunk.get_chunk_no(), chunk.get_rep_degree(), chunk.get_body());
                             Random rand = new Random();
                             int random_delay = rand.nextInt(401);

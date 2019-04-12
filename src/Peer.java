@@ -1,6 +1,6 @@
 /*
-To run: java Peer <peer_id> <remote_obj_name> <version> <port> <mc_addr> <mc_port> <mdb_addr> <mdb_port> <mdr_addr> <mdr_port>
-java Peer 1 obj1 1.0 8888 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
+To run: java Peer <peer_id> <remote_obj_name> <mc_addr> <mc_port> <mdb_addr> <mdb_port> <mdr_addr> <mdr_port>
+java Peer 1 obj1 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
  */
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -28,7 +28,6 @@ public class Peer implements RemoteInterface{
     private InetAddress mdr_address;
     private int mdr_port;
     private int id;
-    private String version;
     private ScheduledThreadPoolExecutor thread_executor;
     private ConcurrentHashMap<String, SaveFile> myFiles;
     private ConcurrentHashMap<String, SaveFile> myFilesToRestore;
@@ -40,10 +39,9 @@ public class Peer implements RemoteInterface{
     private int free_space;
     private int svc_port;
 
-    Peer(int id, String version, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
-                                int mdr_port, String remote_object_name, int svc_port) {
+    Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
+                                int mdr_port, String remote_object_name) {
         this.id = id;
-        this.version = version;
         this.mc_port = mc_port;
         this.mc_address = mc_address;
         this.mc_channel = new MCThread(this.mc_address, this.mc_port, this);
@@ -61,7 +59,7 @@ public class Peer implements RemoteInterface{
         this.chunk_occurrences = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
         this.free_space = this.maxFreeSpace;
-        this.svc_port = svc_port;
+        this.svc_port = 5000;
         this.delete_thread = null;
 
         File peer_dir = new File("peer" + this.id);
@@ -155,16 +153,9 @@ public class Peer implements RemoteInterface{
         mc.start();
         mdr.start();
 
-
-        if(this.version.equals("2.0")) {
-            this.delete_thread = new SendDeleteThread(this, this.myFilesToDelete);
-            Thread delete = new Thread(this.delete_thread);
-            delete.start();
-        }
-    }
-
-    public String get_version() {
-        return this.version; 
+        this.delete_thread = new SendDeleteThread(this, this.myFilesToDelete);
+        Thread delete = new Thread(this.delete_thread);
+        delete.start();
     }
 
     public InetAddress get_mdb_address() {
@@ -220,36 +211,31 @@ public class Peer implements RemoteInterface{
     }
 
     public static void main(String[] args) {
-        if(args.length != 10) {
+        if(args.length != 8) {
             System.out.println("Error: Wrong number of arguments");
+            System.out.println("Usage: java Peer <peer_id> <remote_obj_name> <mc_addr> <mc_port> <mdb_addr> <mdb_port> <mdr_addr> <mdr_port>");
             return;
         }
 
         InetAddress mc_address = null, mdb_address = null, mdr_address = null;
 
         try {
-            mc_address = InetAddress.getByName(args[4]);
-            mdb_address = InetAddress.getByName(args[6]);
-            mdr_address = InetAddress.getByName(args[8]);
+            mc_address = InetAddress.getByName(args[2]);
+            mdb_address = InetAddress.getByName(args[4]);
+            mdr_address = InetAddress.getByName(args[6]);
         } catch(Exception ex) {
             System.out.println("Error in getting InetAddress.");
         }
 
         if(mc_address==null)
             System.exit(-1);
-        int mc_port = Integer.parseInt(args[5]);
-        int mdb_port = Integer.parseInt(args[7]);
-        int mdr_port = Integer.parseInt(args[9]);
-        int svc_port = Integer.parseInt(args[3]);
+        int mc_port = Integer.parseInt(args[3]);
+        int mdb_port = Integer.parseInt(args[5]);
+        int mdr_port = Integer.parseInt(args[7]);
         String remote_object_name = args[1];
-        String version = args[2];
-        if(!version.equals("1.0") && !version.equals("2.0")) {
-            System.out.println("Error: Unidentified version " + version);
-            return;
-        }
         int peer_id = Integer.parseInt(args[0]);
-        Peer peer = new Peer(peer_id, version, mc_address, mc_port, mdb_address, mdb_port, mdr_address, 
-            mdr_port, remote_object_name, svc_port);
+        Peer peer = new Peer(peer_id, mc_address, mc_port, mdb_address, mdb_port, mdr_address, 
+            mdr_port, remote_object_name);
     }
 
     public ConcurrentHashMap<String, ArrayList<Integer>> get_chunk_occurrences() {
@@ -272,7 +258,7 @@ public class Peer implements RemoteInterface{
         mc_channel.sendMessage(message);
     }
 
-    public synchronized String backup_file(String file_name, int rep_degree) throws RemoteException {
+    public synchronized String backup_file(String file_name, int rep_degree, String version) throws RemoteException {
         System.out.println("Initiated backup of a file.");
         
         SaveFile file = new SaveFile(file_name, rep_degree);
@@ -283,20 +269,20 @@ public class Peer implements RemoteInterface{
         ArrayList<Chunk> chunks_to_send = file.get_chunks();
       
         for(int i = 0; i < chunks_to_send.size(); i++) {
-            this.backup_chunk(chunks_to_send.get(i));
+            this.backup_chunk(chunks_to_send.get(i), version);
         }
         System.out.println("Returned from backup of a file.");
         return "Backup executed successfully.";
     }
 
-    public void backup_chunk(Chunk chunk) {
-        Message message = new Message("PUTCHUNK", this.version, this.id, chunk.get_file_id(), chunk.get_chunk_no(), chunk.get_rep_degree(), chunk.get_body());
+    public void backup_chunk(Chunk chunk, String version) {
+        Message message = new Message("PUTCHUNK", version, this.id, chunk.get_file_id(), chunk.get_chunk_no(), chunk.get_rep_degree(), chunk.get_body());
            
         this.get_thread_executor().execute(
                 new MulticasterPutChunkThread(this.mdb_address, this.mdb_port, message.build(), chunk, this));
     }
     
-    public String restore_file(String file_name) throws RemoteException {
+    public String restore_file(String file_name, String version) throws RemoteException {
         System.out.println("Initiated restore of a file.");
         SaveFile file = this.myFiles.get(file_name);      
         if(file == null)
@@ -307,21 +293,24 @@ public class Peer implements RemoteInterface{
         SaveFile new_file = new SaveFile(file_name, number_of_chunks, this);
         this.myFilesToRestore.put(file_id, new_file);
 
-         this.get_thread_executor().execute(
-                new DoRestoreThread(this, number_of_chunks, this.svc_port, file_id));
+        this.get_thread_executor().execute(
+                new DoRestoreThread(this, number_of_chunks, this.svc_port, file_id, version));
         
+        this.svc_port += 1;
+        if(this.svc_port > 9999)
+            this.svc_port = 5000;
         System.out.println("Returned from restore of a file.");
         return "File restored successfully.";
     }
     
-    public String delete_file(String file_name) throws RemoteException {
+    public String delete_file(String file_name, String version) throws RemoteException {
         System.out.println("Initiated delete of a file.");
         SaveFile file = this.myFiles.get(file_name);       
         if(file == null)
             return "File not found.";
         String file_id = file.get_id();
 
-        if(this.version.equals("2.0")) {
+        if(version.equals("2.0")) {
             ArrayList<Integer> senders = new ArrayList<Integer>();
 
             for (String key : this.chunk_occurrences.keySet()) {
@@ -338,7 +327,7 @@ public class Peer implements RemoteInterface{
             }
         }
         
-        Message to_send = new Message("DELETE", this.version, this.id, file_id, 0, 0, null);
+        Message to_send = new Message("DELETE", version, this.id, file_id, 0, 0, null);
         this.sendMessageMC(to_send.build());
 
         int num_chunks = this.myFiles.get(file_name).get_chunks().size();

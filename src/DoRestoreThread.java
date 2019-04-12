@@ -9,21 +9,23 @@ public class DoRestoreThread implements Runnable {
     private int number_of_chunks;
     private int svc_port;
     private String file_id;
+    private String version;
 
-    public DoRestoreThread(Peer peer, int number_of_chunks, int svc_port, String file_id) {
+    public DoRestoreThread(Peer peer, int number_of_chunks, int svc_port, String file_id, String version) {
         this.peer = peer;
         this.number_of_chunks = number_of_chunks;
         this.svc_port = svc_port;
         this.file_id = file_id;
+        this.version = version;
     }
 
     public void run() {
         for(int i = 0; i < this.number_of_chunks; i++) {
-            if(this.peer.get_version().equals("1.0")) {
+            if(this.version.equals("1.0")) {
                 Message to_send = new Message("GETCHUNK", "1.0", this.peer.get_id(), file_id, i+1, 0, null);
                 this.peer.sendMessageMC(to_send.build());
             }
-            else if(this.peer.get_version().equals("2.0")) {
+            else if(this.version.equals("2.0")) {
                 String svc_address = null;
                 try {
                     svc_address = InetAddress.getLocalHost().getHostAddress();
