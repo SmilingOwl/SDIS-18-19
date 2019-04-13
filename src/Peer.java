@@ -1,6 +1,6 @@
 /*
-To run: java Peer <peer_id> <remote_obj_name> <mc_addr> <mc_port> <mdb_addr> <mdb_port> <mdr_addr> <mdr_port>
-java Peer 1 obj1 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
+To run: java Peer <version> <peer_id> <remote_obj_name> <mc_addr> <mc_port> <mdb_addr> <mdb_port> <mdr_addr> <mdr_port>
+java Peer 1.0 1 obj1 224.0.0.3 1111 224.0.0.3 2222 224.0.0.3 3333
  */
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -28,6 +28,7 @@ public class Peer implements RemoteInterface{
     private InetAddress mdr_address;
     private int mdr_port;
     private int id;
+    private String version;
     private ScheduledThreadPoolExecutor thread_executor;
     private ConcurrentHashMap<String, SaveFile> myFiles;
     private ConcurrentHashMap<String, SaveFile> myFilesToRestore;
@@ -39,9 +40,10 @@ public class Peer implements RemoteInterface{
     private int free_space;
     private int svc_port;
 
-    Peer(int id, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
+    Peer(int id, String version, InetAddress mc_address, int mc_port, InetAddress mdb_address, int mdb_port, InetAddress mdr_address, 
                                 int mdr_port, String remote_object_name) {
         this.id = id;
+        this.version = version;
         this.mc_port = mc_port;
         this.mc_address = mc_address;
         this.mc_channel = new MCThread(this.mc_address, this.mc_port, this);
@@ -153,9 +155,11 @@ public class Peer implements RemoteInterface{
         mc.start();
         mdr.start();
 
-        this.delete_thread = new SendDeleteThread(this, this.myFilesToDelete);
-        Thread delete = new Thread(this.delete_thread);
-        delete.start();
+        if(this.version.equals("2.0")) {
+            this.delete_thread = new SendDeleteThread(this, this.myFilesToDelete);
+            Thread delete = new Thread(this.delete_thread);
+            delete.start();
+        }
     }
 
     public InetAddress get_mdb_address() {
@@ -211,30 +215,31 @@ public class Peer implements RemoteInterface{
     }
 
     public static void main(String[] args) {
-        if(args.length != 8) {
+        if(args.length != 9) {
             System.out.println("Error: Wrong number of arguments");
-            System.out.println("Usage: java Peer <peer_id> <remote_obj_name> <mc_addr> <mc_port> <mdb_addr> <mdb_port> <mdr_addr> <mdr_port>");
+            System.out.println("Usage: java Peer <version> <peer_id> <remote_obj_name> <mc_addr> <mc_port> <mdb_addr> <mdb_port> <mdr_addr> <mdr_port>");
             return;
         }
 
         InetAddress mc_address = null, mdb_address = null, mdr_address = null;
 
         try {
-            mc_address = InetAddress.getByName(args[2]);
-            mdb_address = InetAddress.getByName(args[4]);
-            mdr_address = InetAddress.getByName(args[6]);
+            mc_address = InetAddress.getByName(args[3]);
+            mdb_address = InetAddress.getByName(args[5]);
+            mdr_address = InetAddress.getByName(args[7]);
         } catch(Exception ex) {
             System.out.println("Error in getting InetAddress.");
         }
 
         if(mc_address==null)
             System.exit(-1);
-        int mc_port = Integer.parseInt(args[3]);
-        int mdb_port = Integer.parseInt(args[5]);
-        int mdr_port = Integer.parseInt(args[7]);
-        String remote_object_name = args[1];
-        int peer_id = Integer.parseInt(args[0]);
-        Peer peer = new Peer(peer_id, mc_address, mc_port, mdb_address, mdb_port, mdr_address, 
+        int mc_port = Integer.parseInt(args[4]);
+        int mdb_port = Integer.parseInt(args[6]);
+        int mdr_port = Integer.parseInt(args[8]);
+        String remote_object_name = args[2];
+        int peer_id = Integer.parseInt(args[1]);
+        String version = args[0];
+        Peer peer = new Peer(peer_id, version, mc_address, mc_port, mdb_address, mdb_port, mdr_address, 
             mdr_port, remote_object_name);
     }
 
@@ -260,6 +265,13 @@ public class Peer implements RemoteInterface{
 
     public synchronized String backup_file(String file_name, int rep_degree, String version) throws RemoteException {
         System.out.println("Initiated backup of a file.");
+
+        if(!this.version.equals(version)) {
+            if(version.equals("1.0"))
+                return "Error: Peer uses version \"2.0\". Try using BACKUPENH instead of BACKUP.";
+            else
+                return "Error: Peer uses version \"1.0\". Try using BACKUP instead of BACKUPENH.";
+        }
         
         SaveFile file = new SaveFile(file_name, rep_degree);
         if (this.myFiles.get(file_name) != null) {
@@ -284,6 +296,14 @@ public class Peer implements RemoteInterface{
     
     public String restore_file(String file_name, String version) throws RemoteException {
         System.out.println("Initiated restore of a file.");
+
+        if(!this.version.equals(version)) {
+            if(version.equals("1.0"))
+                return "Error: Peer uses version \"2.0\". Try using RESTOREENH instead of RESTORE.";
+            else
+                return "Error: Peer uses version \"1.0\". Try using RESTORE instead of RESTOREENH.";
+        }
+
         SaveFile file = this.myFiles.get(file_name);      
         if(file == null)
             return "File not found.";
@@ -305,6 +325,14 @@ public class Peer implements RemoteInterface{
     
     public String delete_file(String file_name, String version) throws RemoteException {
         System.out.println("Initiated delete of a file.");
+
+        if(!this.version.equals(version)) {
+            if(version.equals("1.0"))
+                return "Error: Peer uses version \"2.0\". Try using DELETEENH instead of DELETE.";
+            else
+                return "Error: Peer uses version \"1.0\". Try using DELETE instead of DELETEENH.";
+        }
+
         SaveFile file = this.myFiles.get(file_name);       
         if(file == null)
             return "File not found.";
