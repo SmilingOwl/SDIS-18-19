@@ -4,14 +4,17 @@ import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import javax.net.ssl.SSLSocket;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class AcceptConnectionThread implements Runnable {
     private SSLSocket socket;
-    private String type;
+    private ScheduledThreadPoolExecutor thread_executor;
+    private Object owner;
     
-    public AcceptConnectionThread(SSLSocket socket, String type) {
+    public AcceptConnectionThread(SSLSocket socket, ScheduledThreadPoolExecutor thread_executor, Object owner) {
         this.socket = socket;
-        this.type = type;
+        this.thread_executor = thread_executor;
+        this.owner = owner;
     }
 
     public void run() {
@@ -24,10 +27,13 @@ public class AcceptConnectionThread implements Runnable {
             while ((nRead = stream.read(data, 0, data.length)) != -1) {
                 buffer.write(data, 0, nRead);
             }
-
             byte[] message_data = buffer.toByteArray();
             //todo check type "manager" or "peer" and do the supposed action
-            System.out.println(new String(message_data));
+            if(this.owner instanceof PeerManager) {
+                System.out.println(new String(message_data));
+                PeerManager peer_manager = (PeerManager) this.owner;
+                this.thread_executor.execute(new ManagerMessageHandler(peer_manager, message_data));
+            }
         } catch(Exception ex) {
             System.out.println("Error receiving message.");
         }

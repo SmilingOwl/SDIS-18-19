@@ -48,7 +48,7 @@ public class Peer implements RemoteInterface {
         try {
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.manager_address, this.manager_port);
-            String message = "hello";//JOIN message
+            String message = "JOIN " + this.id + " " + this.address + " " + this.port + "\r\n\r\n";//JOIN message
             socket.getOutputStream().write(message.getBytes());
             socket.close();
         } catch(Exception ex) {
@@ -80,6 +80,9 @@ public class Peer implements RemoteInterface {
     }
 
     public synchronized String backup_file(String file_name, int rep_degree) throws RemoteException {
+
+        //TODO - create thread to do backup
+
         System.out.println("Initiated backup of a file.");
         SaveFile file = new SaveFile(file_name, rep_degree);
         if (this.files.get(file_name) != null) {
@@ -87,7 +90,7 @@ public class Peer implements RemoteInterface {
         }
         this.files.put(file_name, file);
         
-        //TODO - send BACKUP message to PeerManager (new thread for that)
+        //TODO - send BACKUP message to PeerManager
 
         System.out.println("Returned from backup of a file.");
         return "Backup executed successfully.";

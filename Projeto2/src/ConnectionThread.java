@@ -7,12 +7,12 @@ import javax.net.ssl.SSLServerSocketFactory;
 public class ConnectionThread implements Runnable {
     private int port;
     private ScheduledThreadPoolExecutor thread_executor;
-    private String type;
+    private Object owner;
     
-    public ConnectionThread(int port, ScheduledThreadPoolExecutor thread_executor, String type) {
+    public ConnectionThread(int port, ScheduledThreadPoolExecutor thread_executor, Object owner) {
         this.port = port;
         this.thread_executor = thread_executor;
-        this.type = type;
+        this.owner = owner;
     }
 
     public void run() {
@@ -24,7 +24,7 @@ public class ConnectionThread implements Runnable {
             System.out.println("Ready to accept connection requests.");
             while (true) {
                 SSLSocket socket = (SSLSocket) server_socket.accept();
-                this.thread_executor.execute(new AcceptConnectionThread(socket, this.type));
+                this.thread_executor.execute(new AcceptConnectionThread(socket, this.thread_executor, this.owner));
             }
         } catch (Exception ex) {
             System.out.println("Error creating server socket.");

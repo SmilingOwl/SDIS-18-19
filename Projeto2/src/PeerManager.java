@@ -22,7 +22,7 @@ public class PeerManager {
         this.files = new ConcurrentHashMap<String, ArrayList<Integer>>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
 
-        this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, "manager"));
+        this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, this));
     }
 
     public int get_port() {
