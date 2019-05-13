@@ -44,7 +44,7 @@ public class Peer implements RemoteInterface {
             System.err.println("Peer exception: Object already bound.");
         }
 
-        //TODO - send JOIN message to PeerManager
+        //TODO - send JOIN message to PeerManager (in new thread)
         try {
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.manager_address, this.manager_port);
@@ -55,6 +55,8 @@ public class Peer implements RemoteInterface {
             System.out.println("Error connecting to server.");
             ex.printStackTrace();
         }
+
+        this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, "peer"));
     }
 
     public int get_port() {

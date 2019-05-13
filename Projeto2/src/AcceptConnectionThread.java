@@ -7,9 +7,11 @@ import javax.net.ssl.SSLSocket;
 
 public class AcceptConnectionThread implements Runnable {
     private SSLSocket socket;
+    private String type;
     
-    public AcceptConnectionThread(SSLSocket socket) {
+    public AcceptConnectionThread(SSLSocket socket, String type) {
         this.socket = socket;
+        this.type = type;
     }
 
     public void run() {
@@ -24,6 +26,7 @@ public class AcceptConnectionThread implements Runnable {
             }
 
             byte[] message_data = buffer.toByteArray();
+            //todo check type "manager" or "peer" and do the supposed action
             System.out.println(new String(message_data));
         } catch(Exception ex) {
             System.out.println("Error receiving message.");
