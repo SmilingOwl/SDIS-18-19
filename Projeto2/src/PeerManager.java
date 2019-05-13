@@ -1,16 +1,14 @@
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.ArrayList;
 import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
 
 public class PeerManager {
     private ConcurrentHashMap<Integer, PeerInfo> peers;
     private ConcurrentHashMap<String, ArrayList<Integer>> files;
     private int port;
     private String address;
+    private ScheduledThreadPoolExecutor thread_executor;
 
     PeerManager(int port) {
         this.port = port;
@@ -22,26 +20,9 @@ public class PeerManager {
         }
         this.peers = new ConcurrentHashMap<Integer, PeerInfo>();
         this.files = new ConcurrentHashMap<String, ArrayList<Integer>>();
+        this.thread_executor = new ScheduledThreadPoolExecutor(300);
 
-        //TCP Example
-        try{
-            ServerSocket svc_socket = new ServerSocket(this.port);
-            Socket socket = svc_socket.accept();
-            byte[] data = new byte[65000];
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            InputStream stream = socket.getInputStream();
-            int nRead = 0;
-            while ((nRead = stream.read(data, 0, data.length)) != -1) {
-                buffer.write(data, 0, nRead);
-            }
-
-            byte[] message_data = buffer.toByteArray();
-            System.out.println(new String(message_data));
-            svc_socket.close();
-            socket.close();
-        } catch (Exception ex) {
-            System.out.println("Error creating socket.");
-        }
+        this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor));
     }
 
     public int get_port() {
@@ -62,7 +43,7 @@ public class PeerManager {
 
     public static void main(String[] args) {
         if(args.length != 1) {
-            System.out.println("Usage: java PeerManager <port>");
+            System.out.println("Usage: java -Djavax.net.ssl.keyStore=keystore.jks -Djavax.net.ssl.keyStorePassword=password PeerManager <port>");
             return;
         }
 

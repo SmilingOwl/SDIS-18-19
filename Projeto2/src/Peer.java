@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.net.*;
 import java.io.*;
 import java.util.*;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 public class Peer implements RemoteInterface {
     private int id;
@@ -44,12 +46,14 @@ public class Peer implements RemoteInterface {
 
         //TODO - send JOIN message to PeerManager
         try {
-            Socket socket = new Socket(manager_address, manager_port);
-            String message = "hello";
+            SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.manager_address, this.manager_port);
+            String message = "hello";//JOIN message
             socket.getOutputStream().write(message.getBytes());
             socket.close();
         } catch(Exception ex) {
             System.out.println("Error connecting to server.");
+            ex.printStackTrace();
         }
     }
 
@@ -117,7 +121,7 @@ public class Peer implements RemoteInterface {
 
     public static void main(String[] args) {
         if(args.length != 5) {
-            System.out.println("Usage: java Peer <id> <remote_object_name> <port> <manager_ip> <manager_port>");
+            System.out.println("Usage: java -Djavax.net.ssl.trustStore=truststore.ts -Djavax.net.ssl.trustStorePassword=password Peer <id> <remote_object_name> <port> <manager_ip> <manager_port>");
             return;
         }
 
