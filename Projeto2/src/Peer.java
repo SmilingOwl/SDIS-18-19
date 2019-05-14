@@ -55,7 +55,7 @@ public class Peer implements RemoteInterface {
             ex.printStackTrace();
         }
 
-        this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, "peer"));
+        this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, this));
     }
 
     /************************** Getters **************************/
@@ -126,7 +126,7 @@ public class Peer implements RemoteInterface {
     /************************** Main function **************************/
     public static void main(String[] args) {
         if(args.length != 5) {
-            System.out.println("Usage: java -Djavax.net.ssl.trustStore=truststore.ts -Djavax.net.ssl.trustStorePassword=password Peer <id> <remote_object_name> <port> <manager_ip> <manager_port>");
+            System.out.println("Usage: java -Djavax.net.ssl.trustStore=truststore.ts -Djavax.net.ssl.trustStorePassword=password -Djavax.net.ssl.keyStore=keystore.jks -Djavax.net.ssl.keyStorePassword=password Peer <id> <remote_object_name> <port> <manager_ip> <manager_port>");
             return;
         }
 

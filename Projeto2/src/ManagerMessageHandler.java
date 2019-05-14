@@ -15,7 +15,6 @@ public class ManagerMessageHandler implements Runnable {
     }
 
     public void run() {
-        System.out.println("Entered manager.");
         if (this.message.get_type().equals("JOIN")) {
             this.peer_join();
         } else if (this.message.get_type().equals("BACKUP")) {
@@ -39,9 +38,9 @@ public class ManagerMessageHandler implements Runnable {
 
     public void backup_request() {
         System.out.println("Received backup request.");
-        int rep_degree = message.get_rep_degree();
-        //TODO build message
-        String message = "B_AVAILABLE localhost 1 localhost 2 \r\n\r\n";
+        int rep_degree = message.get_rep_degree(); 
+        //importante receber também o peer_id para o manager não enviar informação sobre o mesmo TODO
+        String message = "B_AVAILABLE localhost 1111 localhost 2222 \r\n\r\n";//TODO build message
         try {
             socket.getOutputStream().write(message.getBytes());
             System.out.println("Sent message.");
