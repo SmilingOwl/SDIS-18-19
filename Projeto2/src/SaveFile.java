@@ -9,6 +9,9 @@ import java.nio.channels.*;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
 import java.net.URI;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.io.BufferedInputStream;
 
 
 public class SaveFile {
@@ -39,7 +42,7 @@ public class SaveFile {
         }
 
         try {
-            Path path = Paths.get(URI.create( this.getClass().getResource(file_path).toString()));
+            /*Path path = Paths.get(URI.create( this.getClass().getResource(file_path).toString()));
             AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
             ByteBuffer buffer = ByteBuffer.allocate(2048);
             
@@ -54,7 +57,12 @@ public class SaveFile {
                 public void failed(Throwable exc, ByteBuffer attachment) {
                     System.out.println("Reading from file failed.");
                 }
-            });
+            });*/
+            byte[] buffer = new byte[10000000];
+            FileInputStream file_is = new FileInputStream(this.file);
+            BufferedInputStream buffered_is = new BufferedInputStream(file_is);
+            int num_buf = buffered_is.read(buffer);
+            this.body = Arrays.copyOfRange(buffer, 0, num_buf);
         } catch(Exception ex) {
             System.out.println("Error reading from file.");
         }
@@ -78,6 +86,16 @@ public class SaveFile {
         }
     }
 
+    SaveFile(String file_path, byte[] file) {
+        try {
+            FileOutputStream fos = new FileOutputStream(file_path);
+            fos.write(file);
+            fos.close();
+        } catch(Exception ex) {
+            System.out.println("Error in writing to restored file.");
+        }
+    }
+
     public String get_id() {
         return this.id;
     }
@@ -92,5 +110,9 @@ public class SaveFile {
 
     public int get_rep_degree(){
         return this.rep_degree;
+    }
+
+    public byte[] get_body(){
+        return this.body;
     }
 }

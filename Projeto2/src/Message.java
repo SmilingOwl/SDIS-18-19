@@ -1,10 +1,10 @@
 import java.util.Arrays;
+import java.util.ArrayList;
 
 class Message {
     private String type;
     private String file_id;
     private byte[] body;
-    private int sender_id;
     private int rep_degree;
     private String address;
     private int port;
@@ -12,13 +12,14 @@ class Message {
     private ArrayList<PeerInfo> peers;
     
 
-    Message(String type, String file_id, int rep_degree, byte[] body, String address, int port) {
+    Message(String type, int sender_id, String file_id, int rep_degree, byte[] body, String address, int port) {
         this.type = type;
         this.file_id = file_id;
         this.rep_degree = rep_degree;
         this.body = body;
         this.address = address;
         this.port = port;
+        this.peer_id = sender_id;
     }
 
     Message(byte[] message) {
@@ -28,9 +29,9 @@ class Message {
         this.type = message_parts[0];
 
         if(this.type.equals("JOIN")) {
-            this.peer_id = parseInt(message_parts[1]);
+            this.peer_id = Integer.parseInt(message_parts[1]);
             this.address = message_parts[2];
-            this.port = parseInt(message_parts[3]);
+            this.port = Integer.parseInt(message_parts[3]);
 
        /** Backup Protocol:
               --BACKUP <rep_degree> <CRLF><CRLF>
@@ -39,7 +40,7 @@ class Message {
               --STORED <file_id>
         */  
        }else if(this.type.equals("BACKUP")){
-           this.rep_degree = message_parts[1];
+           this.rep_degree = Integer.parseInt(message_parts[1]);
 
        }else if(this.type.equals("B_AVAILABLE")){  
          /**  PeerInfo peer = new PeerInfo
@@ -65,7 +66,7 @@ class Message {
 
        }else if(this.type.equals("R_AVAILABLE")){
            this.address = message_parts[1];
-           this.port = parseInt(message_parts[2]);
+           this.port = Integer.parseInt(message_parts[2]);
 
        }else if(this.type.equals("P2P_RESTORE")){
            this.file_id = message_parts[1];
@@ -81,7 +82,7 @@ class Message {
        }else if(this.type.equals("DELETE")){
            this.file_id = message_parts[1];
 
-       }else (this.type.equals("M_DELETE")){
+       }else if(this.type.equals("M_DELETE")){
            this.file_id = message_parts[1];
        }
 
@@ -105,14 +106,13 @@ class Message {
             message= this.type + " " + " \r\n\r\n";
             m_body = message.getBytes();
         
-        }else if(this.type.equals("P2P_BACKUP"){
+        }else if(this.type.equals("P2P_BACKUP")){
             message= this.type + " " + " \r\n\r\n";
             
             byte[] m = message.getBytes();
             m_body = new byte[m.length + body.length];
             System.arraycopy(m, 0, m_body, 0, m.length);
-            System.arraycopy(this.body, 0, m_body, m.length, this.body.length);*/
-            
+            System.arraycopy(this.body, 0, m_body, m.length, this.body.length);
 
         }else if(this.type.equals("STORED")){
             message= this.type + " " + this.file_id + " \r\n\r\n";
@@ -132,7 +132,7 @@ class Message {
 
         }else if(this.type.equals("FILE")){
             message= this.type + " " + this.file_id + " \r\n\r\n";
-            m_body = message.getBytes();
+            byte[] m = message.getBytes();
             m_body = new byte[m.length + body.length];
             System.arraycopy(m, 0, m_body, 0, m.length);
             System.arraycopy(this.body, 0, m_body, m.length, this.body.length);
@@ -162,8 +162,8 @@ class Message {
         return this.type;
     }
 
-    public int get_sender_id() {
-        return this.sender_id;
+    public int get_peer_id() {
+        return this.peer_id;
     }
 
     public String get_file_id(){
