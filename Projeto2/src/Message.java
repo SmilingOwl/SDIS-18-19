@@ -43,12 +43,13 @@ class Message {
            this.rep_degree = Integer.parseInt(message_parts[1]);
 
        }else if(this.type.equals("B_AVAILABLE")){  
-         /**  PeerInfo peer = new PeerInfo
-         for (int i= 0; i< message_parts.length; i++){
-             peers.add()
-         }
-             */
-           
+            PeerInfo peer;
+            for (int i= 0; i< message_parts.length; i++){
+                peer = new PeerInfo(message_parts[i+1], message_parts[i]);
+                peers.add(peer);
+                i++;
+            }
+                
        }else if(this.type.equals("P2P_BACKUP")){  
            this.separate_body(message);
 
@@ -65,8 +66,13 @@ class Message {
            this.file_id = message_parts[1];
 
        }else if(this.type.equals("R_AVAILABLE")){
-           this.address = message_parts[1];
-           this.port = Integer.parseInt(message_parts[2]);
+        PeerInfo peer;
+        for (int i= 0; i< message_parts.length; i++){
+            peer = new PeerInfo(message_parts[i+1], message_parts[i]);
+            peers.add(peer);
+            i++;
+        }
+            
 
        }else if(this.type.equals("P2P_RESTORE")){
            this.file_id = message_parts[1];
@@ -102,8 +108,15 @@ class Message {
             m_body = message.getBytes();
 
         }else if(this.type.equals("B_AVAILABLE")){
-            //TODO
-            message= this.type + " " + " \r\n\r\n";
+            String message_ini = this.type + " ";
+            String message_end ="\r\n\r\n";
+            String message_middle;
+
+            for(int i= 0; i< peers.length; i++){
+                message_middle += peers[i].get_address() + " " + peers[i].get_port()+ " ";
+            }
+
+            message= message_ini + message_middle + message_end;
             m_body = message.getBytes();
         
         }else if(this.type.equals("P2P_BACKUP")){
@@ -123,7 +136,15 @@ class Message {
             m_body = message.getBytes();
 
         }else if(this.type.equals("R_AVAILABLE")){
-            message= this.type + " " + this.address + " " + this.port + " \r\n\r\n";
+            String message_ini = this.type + " ";
+            String message_end ="\r\n\r\n";
+            String message_middle;
+
+            for(int i= 0; i< peers.length; i++){
+                message_middle += peers[i].get_address() + " " + peers[i].get_port()+ " ";
+            }
+
+            message= message_ini + message_middle + message_end;
             m_body = message.getBytes();
 
         }else if(this.type.equals("P2P_RESTORE")){
