@@ -9,9 +9,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class AcceptConnectionThread implements Runnable {
     private SSLSocket socket;
     private ScheduledThreadPoolExecutor thread_executor;
-    private Peer owner;
+    private Object owner;
     
-    public AcceptConnectionThread(SSLSocket socket, ScheduledThreadPoolExecutor thread_executor, Peer owner) {
+    public AcceptConnectionThread(SSLSocket socket, ScheduledThreadPoolExecutor thread_executor, Object owner) {
         this.socket = socket;
         this.thread_executor = thread_executor;
         this.owner = owner;
@@ -30,8 +30,16 @@ public class AcceptConnectionThread implements Runnable {
             byte[] message_data = buffer.toByteArray();
             System.out.println("Received message.");
             
-            System.out.println(new String(message_data));
-            //Thread message handler for peer TODO
+            if(this.owner instanceof PeerManager) {
+                PeerManager peer_manager = (PeerManager) this.owner;
+                this.thread_executor.execute(new ManagerMessageHandler(peer_manager, this.socket, message_data));
+            } else if(this.owner instanceof Peer) {
+                System.out.println("Inside Peer.");
+                Peer peer = (Peer) this.owner;
+                System.out.println("Received message.");
+                System.out.println(new String(message_data));
+                //Thread message handler for peer TODO
+            }
         } catch(Exception ex) {
             System.out.println("Error receiving message.");
         }

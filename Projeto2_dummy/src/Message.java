@@ -45,7 +45,7 @@ class Message {
        }else if(this.type.equals("B_AVAILABLE")){  
             PeerInfo peer;
             for (int i= 0; i< message_parts.length; i++){
-                peer = new PeerInfo(Integer.parseInt(message_parts[i+1]), message_parts[i]);
+                peer = new PeerInfo(message_parts[i+1], message_parts[i]);
                 peers.add(peer);
                 i++;
             }
@@ -68,7 +68,7 @@ class Message {
        }else if(this.type.equals("R_AVAILABLE")){
         PeerInfo peer;
         for (int i= 0; i< message_parts.length; i++){
-            peer = new PeerInfo(Integer.parseInt(message_parts[i+1]), message_parts[i]);
+            peer = new PeerInfo(message_parts[i+1], message_parts[i]);
             peers.add(peer);
             i++;
         }
@@ -110,10 +110,10 @@ class Message {
         }else if(this.type.equals("B_AVAILABLE")){
             String message_ini = this.type + " ";
             String message_end ="\r\n\r\n";
-            String message_middle = "";
+            String message_middle;
 
-            for(int i= 0; i< peers.size(); i++){
-                message_middle += peers.get(i).get_address() + " " + peers.get(i).get_port()+ " ";
+            for(int i= 0; i< peers.length; i++){
+                message_middle += peers[i].get_address() + " " + peers[i].get_port()+ " ";
             }
 
             message= message_ini + message_middle + message_end;
@@ -138,10 +138,10 @@ class Message {
         }else if(this.type.equals("R_AVAILABLE")){
             String message_ini = this.type + " ";
             String message_end ="\r\n\r\n";
-            String message_middle = "";
+            String message_middle;
 
-            for(int i= 0; i< peers.size(); i++){
-                message_middle += peers.get(i).get_address() + " " + peers.get(i).get_port()+ " ";
+            for(int i= 0; i< peers.length; i++){
+                message_middle += peers[i].get_address() + " " + peers[i].get_port()+ " ";
             }
 
             message= message_ini + message_middle + message_end;

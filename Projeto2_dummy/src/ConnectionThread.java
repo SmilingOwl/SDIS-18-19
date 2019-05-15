@@ -7,9 +7,9 @@ import javax.net.ssl.SSLServerSocketFactory;
 public class ConnectionThread implements Runnable {
     private int port;
     private ScheduledThreadPoolExecutor thread_executor;
-    private Peer owner;
+    private Object owner;
     
-    public ConnectionThread(int port, ScheduledThreadPoolExecutor thread_executor, Peer owner) {
+    public ConnectionThread(int port, ScheduledThreadPoolExecutor thread_executor, Object owner) {
         this.port = port;
         this.thread_executor = thread_executor;
         this.owner = owner;

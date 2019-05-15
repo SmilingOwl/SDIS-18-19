@@ -14,12 +14,16 @@ public class Peer implements RemoteInterface {
     private int id;
     private int port;
     private String address;
+    private int manager_port;
+    private String manager_address;
     private ConcurrentHashMap<String, SaveFile> files;
     private ScheduledThreadPoolExecutor thread_executor;
 
-    public Peer(int id, String remote_object_name, int port) {
+    public Peer(int id, String remote_object_name, int port, String manager_address, int manager_port) {
         this.id = id;
         this.port = port;
+        this.manager_port = manager_port;
+        this.manager_address = manager_address;
         this.files = new ConcurrentHashMap<String, SaveFile>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
 
@@ -40,6 +44,17 @@ public class Peer implements RemoteInterface {
             System.err.println("Peer exception: Object already bound.");
         }
 
+        try {
+            SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.manager_address, this.manager_port);
+            Message message = new Message("JOIN", this.id, null, -1, null, this.address, this.port);
+            socket.getOutputStream().write(message.build());
+            socket.close();
+        } catch(Exception ex) {
+            System.out.println("Error connecting to server.");
+            ex.printStackTrace();
+        }
+
         this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, this));
     }
 
@@ -51,6 +66,14 @@ public class Peer implements RemoteInterface {
 
     public String get_address() {
         return this.address;
+    }
+
+    public int get_manager_port() {
+        return this.manager_port;
+    }
+
+    public String get_manager_address() {
+        return this.manager_address;
     }
 
     public int get_id() {
@@ -68,7 +91,7 @@ public class Peer implements RemoteInterface {
     /************************** Protocols functions **************************/
 
     public synchronized String backup_file(String file_name, int rep_degree) throws RemoteException {
-        //this.thread_executor.execute(new BackupThread(file_name, rep_degree, this));
+        this.thread_executor.execute(new BackupThread(file_name, rep_degree, this));
         return "Backup executed successfully.";
     }
 
@@ -102,11 +125,11 @@ public class Peer implements RemoteInterface {
     
     /************************** Main function **************************/
     public static void main(String[] args) {
-        if(args.length != 3) {
-            System.out.println("Usage: java -Djavax.net.ssl.trustStore=truststore.ts -Djavax.net.ssl.trustStorePassword=password -Djavax.net.ssl.keyStore=keystore.jks -Djavax.net.ssl.keyStorePassword=password Peer <id> <remote_object_name> <port>");
+        if(args.length != 5) {
+            System.out.println("Usage: java -Djavax.net.ssl.trustStore=truststore.ts -Djavax.net.ssl.trustStorePassword=password -Djavax.net.ssl.keyStore=keystore.jks -Djavax.net.ssl.keyStorePassword=password Peer <id> <remote_object_name> <port> <manager_ip> <manager_port>");
             return;
         }
 
-        Peer p = new Peer(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]));
+        Peer p = new Peer(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]), args[3], Integer.parseInt(args[4]));
     }
 }
