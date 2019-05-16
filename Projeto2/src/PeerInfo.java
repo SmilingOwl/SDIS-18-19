@@ -19,4 +19,8 @@ public class PeerInfo {
     public String get_address() {
         return this.address;
     }
+
+    public BigInteger get_id() {
+        return this.id;
+    }
 }
