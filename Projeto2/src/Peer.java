@@ -4,21 +4,21 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ConcurrentHashMap;
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.net.InetAddress;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class Peer implements RemoteInterface {
-    private int id;
+    private BigInteger id;
     private int port;
     private String address;
     private ConcurrentHashMap<String, SaveFile> files;
     private ScheduledThreadPoolExecutor thread_executor;
 
-    public Peer(int id, String remote_object_name, int port) {
-        this.id = id;
+    public Peer(String remote_object_name, int port) {
         this.port = port;
         this.files = new ConcurrentHashMap<String, SaveFile>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
@@ -29,6 +29,8 @@ public class Peer implements RemoteInterface {
             System.out.println("Error getting address.");
             return;
         }
+
+        this.generateId();
 
         try {
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(this, 0);
@@ -53,7 +55,7 @@ public class Peer implements RemoteInterface {
         return this.address;
     }
 
-    public int get_id() {
+    public BigInteger get_id() {
         return this.id;
     }
 
@@ -63,6 +65,19 @@ public class Peer implements RemoteInterface {
 
     public ConcurrentHashMap<String, SaveFile> get_files() {
         return this.files;
+    }
+
+    /************************** Others **************************/
+    private void generateId() {
+        byte[] result = null;
+        try {
+            MessageDigest mDigest = MessageDigest.getInstance("SHA1");
+            String input = this.address + " " + this.port;
+            result = mDigest.digest(input.getBytes());
+        } catch(NoSuchAlgorithmException ex) {
+            System.out.println("Error generating id");
+        }
+        this.id = new BigInteger(result);
     }
 
     /************************** Protocols functions **************************/
@@ -102,11 +117,11 @@ public class Peer implements RemoteInterface {
     
     /************************** Main function **************************/
     public static void main(String[] args) {
-        if(args.length != 3) {
-            System.out.println("Usage: java -Djavax.net.ssl.trustStore=truststore.ts -Djavax.net.ssl.trustStorePassword=password -Djavax.net.ssl.keyStore=keystore.jks -Djavax.net.ssl.keyStorePassword=password Peer <id> <remote_object_name> <port>");
+        if(args.length != 2) {
+            System.out.println("Usage: java -Djavax.net.ssl.trustStore=truststore.ts -Djavax.net.ssl.trustStorePassword=password -Djavax.net.ssl.keyStore=keystore.jks -Djavax.net.ssl.keyStorePassword=password Peer <remote_object_name> <port>");
             return;
         }
 
-        Peer p = new Peer(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]));
+        Peer p = new Peer(args[0], Integer.parseInt(args[1]));
     }
 }

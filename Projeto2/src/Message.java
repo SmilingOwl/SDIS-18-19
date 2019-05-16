@@ -1,6 +1,6 @@
 import java.util.Arrays;
 import java.util.ArrayList;
-
+/*
 class Message {
     private String type;
     private String file_id;
@@ -33,12 +33,12 @@ class Message {
             this.address = message_parts[2];
             this.port = Integer.parseInt(message_parts[3]);
 
-       /** Backup Protocol:
-              --BACKUP <rep_degree> <CRLF><CRLF>
-              --B_AVAILABLE <address> <port> <address> <port>...
-              --P2P_BACKUP <body>
-              --STORED <file_id>
-        */  
+        // Backup Protocol:
+        //       --BACKUP <rep_degree> <CRLF><CRLF>
+        //       --B_AVAILABLE <address> <port> <address> <port>...
+        //       --P2P_BACKUP <body>
+        //       --STORED <file_id>
+         
        }else if(this.type.equals("BACKUP")){
            this.rep_degree = Integer.parseInt(message_parts[1]);
 
@@ -56,12 +56,12 @@ class Message {
        }else if(this.type.equals("STORED")){
            this.file_id = message_parts[1];
 
-       /** RESTORE Protocol:
-              --RESTORE <file_id> <CRLF><CRLF>
-              --R_AVAILABLE <address> <port>
-              --P2P_RESTORE <file_id>
-              --FILE <file_id> <body>
-        */     
+       // RESTORE Protocol:
+            //   --RESTORE <file_id> <CRLF><CRLF>
+            //   --R_AVAILABLE <address> <port>
+            //   --P2P_RESTORE <file_id>
+            //   --FILE <file_id> <body>
+         
        }else if(this.type.equals("RESTORE")){
            this.file_id = message_parts[1];
 
@@ -81,10 +81,10 @@ class Message {
            this.file_id = message_parts[1];
            this.separate_body(message);
 
-       /** DELETE Protocol:
-              --DELETE <file_id> 
-              --M_DELETE <file_id>
-        */
+        // DELETE Protocol:
+        //       --DELETE <file_id> 
+        //       --M_DELETE <file_id>
+        
        }else if(this.type.equals("DELETE")){
            this.file_id = message_parts[1];
 
@@ -206,4 +206,4 @@ class Message {
     public String get_address() {
         return this.address;
     }
-}
+}*/
