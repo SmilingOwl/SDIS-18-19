@@ -7,8 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.net.*;
 import java.io.*;
 import java.util.*;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 
 public class Peer implements RemoteInterface {
     private int id;
@@ -17,6 +15,7 @@ public class Peer implements RemoteInterface {
     private int manager_port;
     private String manager_address;
     private ConcurrentHashMap<String, SaveFile> files;
+    private ConcurrentHashMap<String, SaveFile> backed_up_files;
     private ScheduledThreadPoolExecutor thread_executor;
 
     public Peer(int id, String remote_object_name, int port, String manager_address, int manager_port) {
@@ -25,6 +24,7 @@ public class Peer implements RemoteInterface {
         this.manager_port = manager_port;
         this.manager_address = manager_address;
         this.files = new ConcurrentHashMap<String, SaveFile>();
+        this.backed_up_files = new ConcurrentHashMap<String, SaveFile>();
         this.thread_executor = new ScheduledThreadPoolExecutor(300);
 
         try{
@@ -34,6 +34,12 @@ public class Peer implements RemoteInterface {
             return;
         }
 
+        //Join the network
+        Message message = new Message("JOIN", this.id, null, -1, null, this.address, this.port, null);
+        SendMessage send_join = new SendMessage(this.manager_address, this.manager_port, message);
+        send_join.run();
+        
+        //Set up RMI
         try {
             RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(this, 0);
             Registry registry = LocateRegistry.getRegistry();
@@ -41,18 +47,9 @@ public class Peer implements RemoteInterface {
             System.out.println("Peer ready.");
 
         } catch (Exception e) {
-            System.err.println("Peer exception: Object already bound.");
-        }
-
-        try {
-            SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.manager_address, this.manager_port);
-            Message message = new Message("JOIN", this.id, null, -1, null, this.address, this.port);
-            socket.getOutputStream().write(message.build());
-            socket.close();
-        } catch(Exception ex) {
-            System.out.println("Error connecting to server.");
-            ex.printStackTrace();
+            System.out.println("Error on RMI: Check if you've started rmiregistry by doing 'start rmiregistry' on Windows"
+                + " or 'rmiregistry &' on Ubuntu. If so, check if object is already bound.");
+            return;
         }
 
         this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, this));
@@ -85,6 +82,10 @@ public class Peer implements RemoteInterface {
     }
 
     public ConcurrentHashMap<String, SaveFile> get_files() {
+        return this.files;
+    }
+
+    public ConcurrentHashMap<String, SaveFile> get_backed_up_files() {
         return this.files;
     }
 
@@ -130,6 +131,6 @@ public class Peer implements RemoteInterface {
             return;
         }
 
-        Peer p = new Peer(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]), args[3], Integer.parseInt(args[4]));
+        new Peer(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]), args[3], Integer.parseInt(args[4]));
     }
 }

@@ -12,14 +12,16 @@ class Message {
     private ArrayList<PeerInfo> peers;
     
 
-    Message(String type, int sender_id, String file_id, int rep_degree, byte[] body, String address, int port) {
+    Message(String type, int peer_id, String file_id, int rep_degree, byte[] body, String address, int port,
+        ArrayList<PeerInfo> peers) {
         this.type = type;
         this.file_id = file_id;
         this.rep_degree = rep_degree;
         this.body = body;
         this.address = address;
         this.port = port;
-        this.peer_id = sender_id;
+        this.peer_id = peer_id;
+        this.peers = peers;
     }
 
     Message(byte[] message) {
@@ -37,23 +39,25 @@ class Message {
        /** Backup Protocol:
               --BACKUP <rep_degree> <CRLF><CRLF>
               --B_AVAILABLE <address> <port> <address> <port>...
-              --P2P_BACKUP <body>
+              --P2P_BACKUP <file_id> <body>
               --STORED <file_id>
         */  
        }else if(this.type.equals("BACKUP")){
-           this.rep_degree = Integer.parseInt(message_parts[1]);
+           this.peer_id = Integer.parseInt(message_parts[1]);
+           this.rep_degree = Integer.parseInt(message_parts[2]);
 
        }else if(this.type.equals("B_AVAILABLE")){  
             PeerInfo peer;
             for (int i= 1; i< message_parts.length; i++){
-                peer = new PeerInfo(Integer.parseInt(message_parts[i+1]), message_parts[i]);
+                peer = new PeerInfo(-1, Integer.parseInt(message_parts[i+1]), message_parts[i]);
                 System.out.println(" --" + peer);
                 System.out.println(" ---" + this.peers);
                 this.peers.add(peer);
                 i++;
             }
                 
-       }else if(this.type.equals("P2P_BACKUP")){  
+       }else if(this.type.equals("P2P_BACKUP")){
+           this.file_id = message_parts[1];
            this.separate_body(message);
 
        }else if(this.type.equals("STORED")){
@@ -71,7 +75,7 @@ class Message {
        }else if(this.type.equals("R_AVAILABLE")){
         PeerInfo peer;
         for (int i= 0; i< message_parts.length; i++){
-            peer = new PeerInfo(Integer.parseInt(message_parts[i+1]), message_parts[i]);
+            peer = new PeerInfo(-1, Integer.parseInt(message_parts[i+1]), message_parts[i]);
             this.peers.add(peer);
             i++;
         }
@@ -107,7 +111,7 @@ class Message {
             m_body = message.getBytes();
         
         }else if(this.type.equals("BACKUP")){
-            message = this.type + " " + this.rep_degree + " \r\n\r\n";
+            message = this.type + " " + this.peer_id + " " + this.rep_degree + " \r\n\r\n";
             m_body = message.getBytes();
 
         }else if(this.type.equals("B_AVAILABLE")){
@@ -123,7 +127,7 @@ class Message {
             m_body = message.getBytes();
         
         }else if(this.type.equals("P2P_BACKUP")){
-            message= this.type + " " + " \r\n\r\n";
+            message= this.type + " " + this.file_id + " \r\n\r\n";
             
             byte[] m = message.getBytes();
             m_body = new byte[m.length + body.length];

@@ -86,13 +86,22 @@ public class SaveFile {
         }
     }
 
-    SaveFile(String file_path, byte[] file) {
+    SaveFile(int peer_id, String file_name, byte[] file) {
+        File peer_dir = new File("peer" + peer_id);
+        if(!peer_dir.exists()) {
+            peer_dir.mkdir();
+        }
+        File backup_dir = new File("peer" + peer_id + "/backup");
+        if(!backup_dir.exists()) {
+            backup_dir.mkdir();
+        }
         try {
-            FileOutputStream fos = new FileOutputStream(file_path);
+            FileOutputStream fos = new FileOutputStream("peer" + peer_id + "/backup/" + file_name);
             fos.write(file);
             fos.close();
         } catch(Exception ex) {
             System.out.println("Error in writing to restored file.");
+            ex.printStackTrace();
         }
     }
 

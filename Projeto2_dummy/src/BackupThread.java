@@ -21,18 +21,18 @@ public class BackupThread implements Runnable {
         this.owner.get_files().put(file_name, file);
         //TEST, to use to restore a file:
         //SaveFile write = new SaveFile(file_name, file.get_body());
-        Message to_manager = new Message("BACKUP", this.owner.get_id(), null, this.rep_degree, null, null, -1);
-        Message manager_answer = this.backup_request(to_manager, this.owner.get_manager_port(), 
+        Message to_manager = new Message("BACKUP", this.owner.get_id(), null, this.rep_degree, null, null, -1, null);
+        Message manager_answer = this.backup_request_manager(to_manager, this.owner.get_manager_port(), 
             this.owner.get_manager_address());
         ArrayList<PeerInfo> address_list = manager_answer.get_peers();
         for(int i = 0; i < address_list.size(); i++) {
             Message to_peer = new Message("P2P_BACKUP", this.owner.get_id(), file.get_id(), this.rep_degree,
-                file.get_body(), address_list.get(i).get_address(), address_list.get(i).get_port());
+                file.get_body(), address_list.get(i).get_address(), address_list.get(i).get_port(), null);
             this.backup_request(to_peer, address_list.get(i).get_port(), address_list.get(i).get_address());
         }
     }
 
-    public Message backup_request(Message message, int port, String address) {
+    public Message backup_request_manager(Message message, int port, String address) {
         Message received_message = null;
         try {
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
@@ -46,11 +46,26 @@ public class BackupThread implements Runnable {
             buffer.write(data, 0, nRead);
             byte[] message_data = buffer.toByteArray();
             received_message = new Message(message_data);
-            System.out.println(new String(message_data)); //test TO DELETE
+            System.out.println(new String(message_data)); //test TO DELETE TODO
             socket.close();
         } catch(Exception ex) {
             System.out.println("Error connecting to server.");
-            ex.printStackTrace();
+            ex.printStackTrace(); //TODO delete
+        }
+        return received_message;
+    }
+
+    public Message backup_request(Message message, int port, String address) {
+        Message received_message = null;
+        try {
+            SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
+            socket.getOutputStream().write(message.build());
+            System.out.println("Sent backup request.");
+            socket.close();
+        } catch(Exception ex) {
+            System.out.println("Error connecting to server.");
+            ex.printStackTrace(); //TODO delete
         }
         return received_message;
     }

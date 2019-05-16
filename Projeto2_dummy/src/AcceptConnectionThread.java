@@ -33,8 +33,7 @@ public class AcceptConnectionThread implements Runnable {
                 this.thread_executor.execute(new ManagerMessageHandler(peer_manager, this.socket, message_data));
             } else if(this.owner instanceof Peer) {
                 Peer peer = (Peer) this.owner;
-                System.out.println(new String(message_data));
-                //Thread message handler for peer TODO
+                this.thread_executor.execute(new PeerMessageHandler(peer, this.socket, message_data));
             }
         } catch(Exception ex) {
             System.out.println("Error receiving message.");
