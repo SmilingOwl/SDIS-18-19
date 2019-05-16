@@ -27,6 +27,7 @@ class Message {
         msg = msg.trim();
         String[] message_parts = msg.split(" ");
         this.type = message_parts[0];
+        this.peers = new ArrayList<PeerInfo>();
 
         if(this.type.equals("JOIN")) {
             this.peer_id = Integer.parseInt(message_parts[1]);
@@ -44,9 +45,11 @@ class Message {
 
        }else if(this.type.equals("B_AVAILABLE")){  
             PeerInfo peer;
-            for (int i= 0; i< message_parts.length; i++){
+            for (int i= 1; i< message_parts.length; i++){
                 peer = new PeerInfo(Integer.parseInt(message_parts[i+1]), message_parts[i]);
-                peers.add(peer);
+                System.out.println(" --" + peer);
+                System.out.println(" ---" + this.peers);
+                this.peers.add(peer);
                 i++;
             }
                 
@@ -69,7 +72,7 @@ class Message {
         PeerInfo peer;
         for (int i= 0; i< message_parts.length; i++){
             peer = new PeerInfo(Integer.parseInt(message_parts[i+1]), message_parts[i]);
-            peers.add(peer);
+            this.peers.add(peer);
             i++;
         }
             
@@ -112,8 +115,8 @@ class Message {
             String message_end ="\r\n\r\n";
             String message_middle = "";
 
-            for(int i= 0; i< peers.size(); i++){
-                message_middle += peers.get(i).get_address() + " " + peers.get(i).get_port()+ " ";
+            for(int i= 0; i< this.peers.size(); i++){
+                message_middle += this.peers.get(i).get_address() + " " + this.peers.get(i).get_port()+ " ";
             }
 
             message= message_ini + message_middle + message_end;
@@ -140,8 +143,8 @@ class Message {
             String message_end ="\r\n\r\n";
             String message_middle="";
 
-            for(int i= 0; i< peers.size(); i++){
-                message_middle += peers.get(i).get_address() + " " + peers.get(i).get_port()+ " ";
+            for(int i= 0; i< this.peers.size(); i++){
+                message_middle += this.peers.get(i).get_address() + " " + this.peers.get(i).get_port()+ " ";
             }
 
             message= message_ini + message_middle + message_end;
@@ -197,6 +200,10 @@ class Message {
 
     public byte[] get_body() {
         return this.body;
+    }
+
+    public ArrayList<PeerInfo> get_peers() {
+        return this.peers;
     }
 
     public int get_port() {

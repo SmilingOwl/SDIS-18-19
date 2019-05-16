@@ -23,9 +23,7 @@ public class AcceptConnectionThread implements Runnable {
             byte[] data = new byte[10000000];
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             InputStream stream = this.socket.getInputStream();
-            System.out.println(" - before read.");
             int nRead = stream.read(data, 0, data.length);
-            System.out.println(" - after read.");
             buffer.write(data, 0, nRead);
             byte[] message_data = buffer.toByteArray();
             System.out.println("Received message.");
@@ -34,9 +32,7 @@ public class AcceptConnectionThread implements Runnable {
                 PeerManager peer_manager = (PeerManager) this.owner;
                 this.thread_executor.execute(new ManagerMessageHandler(peer_manager, this.socket, message_data));
             } else if(this.owner instanceof Peer) {
-                System.out.println("Inside Peer.");
                 Peer peer = (Peer) this.owner;
-                System.out.println("Received message.");
                 System.out.println(new String(message_data));
                 //Thread message handler for peer TODO
             }

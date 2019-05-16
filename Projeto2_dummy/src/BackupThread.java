@@ -24,9 +24,7 @@ public class BackupThread implements Runnable {
         Message to_manager = new Message("BACKUP", this.owner.get_id(), null, this.rep_degree, null, null, -1);
         Message manager_answer = this.backup_request(to_manager, this.owner.get_manager_port(), 
             this.owner.get_manager_address());
-        ArrayList<PeerInfo> address_list = new ArrayList<PeerInfo>(); //get from message TODO
-        PeerInfo dummy = new PeerInfo(2222, "localhost"); //TO DELETE
-        address_list.add(dummy); //TO DELETE
+        ArrayList<PeerInfo> address_list = manager_answer.get_peers();
         for(int i = 0; i < address_list.size(); i++) {
             Message to_peer = new Message("P2P_BACKUP", this.owner.get_id(), file.get_id(), this.rep_degree,
                 file.get_body(), address_list.get(i).get_address(), address_list.get(i).get_port());
