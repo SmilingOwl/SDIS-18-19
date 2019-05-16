@@ -23,17 +23,19 @@ public class AcceptConnectionThread implements Runnable {
             byte[] data = new byte[10000000];
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             InputStream stream = this.socket.getInputStream();
-            System.out.println(" - before read.");
             int nRead = stream.read(data, 0, data.length);
-            System.out.println(" - after read.");
             buffer.write(data, 0, nRead);
             byte[] message_data = buffer.toByteArray();
             System.out.println("Received message.");
             
             System.out.println(new String(message_data));
+            
+            this.thread_executor.execute(new MessageHandler(this.owner, this.socket, message_data));
+            
             //Thread message handler for peer TODO
         } catch(Exception ex) {
             System.out.println("Error receiving message.");
+            ex.printStackTrace();
         }
     }
 }
