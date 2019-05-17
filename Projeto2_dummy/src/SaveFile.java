@@ -43,22 +43,6 @@ public class SaveFile {
         }
 
         try {
-            /*Path path = Paths.get(URI.create( this.getClass().getResource(file_path).toString()));
-            AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
-            ByteBuffer buffer = ByteBuffer.allocate(2048);
-            
-            fileChannel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
-            
-                @Override
-                public void completed(Integer result, ByteBuffer attachment) {
-                    body = new byte[attachment.remaining()];
-                    attachment.get(body, 0, body.length);
-                }
-                @Override
-                public void failed(Throwable exc, ByteBuffer attachment) {
-                    System.out.println("Reading from file failed.");
-                }
-            });*/
             byte[] buffer = new byte[16000];
             FileInputStream file_is = new FileInputStream(this.file);
             BufferedInputStream buffered_is = new BufferedInputStream(file_is);
