@@ -19,7 +19,7 @@ public class AcceptConnectionThread implements Runnable {
 
     public void run() {
         try {
-            System.out.println("Connection accepted");
+            System.out.println("\nConnection accepted");
             byte[] data = new byte[10000000];
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             InputStream stream = this.socket.getInputStream();

@@ -40,7 +40,7 @@ class Message {
               --BACKUP <rep_degree> <CRLF><CRLF>
               --B_AVAILABLE <address> <port> <address> <port>...
               --P2P_BACKUP <file_id> <body>
-              --STORED <file_id>
+              --STORED <peer_id> <file_id>
         */  
        }else if(this.type.equals("BACKUP")){
            this.peer_id = Integer.parseInt(message_parts[1]);
@@ -50,18 +50,18 @@ class Message {
             PeerInfo peer;
             for (int i= 1; i< message_parts.length; i++){
                 peer = new PeerInfo(-1, Integer.parseInt(message_parts[i+1]), message_parts[i]);
-                System.out.println(" --" + peer);
-                System.out.println(" ---" + this.peers);
                 this.peers.add(peer);
                 i++;
             }
                 
        }else if(this.type.equals("P2P_BACKUP")){
            this.file_id = message_parts[1];
+           this.rep_degree = Integer.parseInt(message_parts[2]);
            this.separate_body(message);
 
        }else if(this.type.equals("STORED")){
-           this.file_id = message_parts[1];
+            this.peer_id = Integer.parseInt(message_parts[1]);
+            this.file_id = message_parts[2];
 
        /** RESTORE Protocol:
               --RESTORE <file_id> <CRLF><CRLF>
@@ -127,15 +127,12 @@ class Message {
             m_body = message.getBytes();
         
         }else if(this.type.equals("P2P_BACKUP")){
-            message= this.type + " " + this.file_id + " \r\n\r\n";
+            message= this.type + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
             
-            byte[] m = message.getBytes();
-            m_body = new byte[m.length + body.length];
-            System.arraycopy(m, 0, m_body, 0, m.length);
-            System.arraycopy(this.body, 0, m_body, m.length, this.body.length);
+            m_body = message.getBytes();
 
         }else if(this.type.equals("STORED")){
-            message= this.type + " " + this.file_id + " \r\n\r\n";
+            message= this.type +  " " + this.peer_id + " " + this.file_id + " \r\n\r\n";
             m_body = message.getBytes();
 
         }else if(this.type.equals("RESTORE")){

@@ -26,9 +26,9 @@ public class BackupThread implements Runnable {
             this.owner.get_manager_address());
         ArrayList<PeerInfo> address_list = manager_answer.get_peers();
         for(int i = 0; i < address_list.size(); i++) {
-            Message to_peer = new Message("P2P_BACKUP", this.owner.get_id(), file.get_id(), this.rep_degree,
-                file.get_body(), address_list.get(i).get_address(), address_list.get(i).get_port(), null);
-            this.backup_request(to_peer, address_list.get(i).get_port(), address_list.get(i).get_address());
+            Message to_peer = new Message("P2P_BACKUP", this.owner.get_id(), file.get_id(), file.get_body().size(),
+                null, address_list.get(i).get_address(), address_list.get(i).get_port(), null);
+            this.backup_request(to_peer, address_list.get(i).get_port(), address_list.get(i).get_address(), file);
         }
     }
 
@@ -39,28 +39,38 @@ public class BackupThread implements Runnable {
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
             socket.getOutputStream().write(message.build());
             System.out.println("Sent backup request.");
-            byte[] data = new byte[10000000];
+            byte[] data = new byte[16000];
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             InputStream stream = socket.getInputStream();
             int nRead = stream.read(data, 0, data.length);
             buffer.write(data, 0, nRead);
             byte[] message_data = buffer.toByteArray();
             received_message = new Message(message_data);
-            System.out.println(new String(message_data)); //test TO DELETE TODO
             socket.close();
         } catch(Exception ex) {
             System.out.println("Error connecting to server.");
-            ex.printStackTrace(); //TODO delete
         }
         return received_message;
     }
 
-    public Message backup_request(Message message, int port, String address) {
+    public Message backup_request(Message message, int port, String address, SaveFile file) {
         Message received_message = null;
         try {
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
             socket.getOutputStream().write(message.build());
+            byte[] data = new byte[16000];
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            InputStream stream = socket.getInputStream();
+            int nRead = stream.read(data, 0, data.length);
+            buffer.write(data, 0, nRead);
+            byte[] message_data = buffer.toByteArray();
+            String answer = new String(message_data);
+            if(answer.equals("READY")) {
+                for(int i = 0; i < file.get_body().size(); i++) {
+                    socket.getOutputStream().write(file.get_body().get(i));
+                }
+            }
             System.out.println("Sent backup request.");
             socket.close();
         } catch(Exception ex) {

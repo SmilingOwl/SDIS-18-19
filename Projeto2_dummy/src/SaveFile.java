@@ -19,13 +19,14 @@ public class SaveFile {
     private int rep_degree;
     private File file;
     private String file_name;
-    private byte[] body;
+    private ArrayList<byte[]> body;
     private Peer peer;
 
     SaveFile(String file_path, int rep_degree) {
         this.file = new File(file_path);
         this.rep_degree = rep_degree;
         String unhashed_id = file.getName() + file.getParent() + file.lastModified();
+        body = new ArrayList<byte[]>();
         
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -58,11 +59,16 @@ public class SaveFile {
                     System.out.println("Reading from file failed.");
                 }
             });*/
-            byte[] buffer = new byte[10000000];
+            byte[] buffer = new byte[16000];
             FileInputStream file_is = new FileInputStream(this.file);
             BufferedInputStream buffered_is = new BufferedInputStream(file_is);
             int num_buf = buffered_is.read(buffer);
-            this.body = Arrays.copyOfRange(buffer, 0, num_buf);
+            while(num_buf > 0) {
+                byte[] buf = Arrays.copyOfRange(buffer, 0, num_buf);
+                this.body.add(buf);
+                buffer = new byte[16000];
+                num_buf = buffered_is.read(buffer);
+            }
         } catch(Exception ex) {
             System.out.println("Error reading from file.");
         }
@@ -86,7 +92,7 @@ public class SaveFile {
         }
     }
 
-    SaveFile(int peer_id, String file_name, byte[] file) {
+    SaveFile(int peer_id, String file_name, ArrayList<byte[]> file) {
         File peer_dir = new File("peer" + peer_id);
         if(!peer_dir.exists()) {
             peer_dir.mkdir();
@@ -97,7 +103,9 @@ public class SaveFile {
         }
         try {
             FileOutputStream fos = new FileOutputStream("peer" + peer_id + "/backup/" + file_name);
-            fos.write(file);
+            for(int i = 0; i < file.size(); i++) {
+                fos.write(file.get(i));
+            }
             fos.close();
         } catch(Exception ex) {
             System.out.println("Error in writing to restored file.");
@@ -121,7 +129,7 @@ public class SaveFile {
         return this.rep_degree;
     }
 
-    public byte[] get_body(){
+    public ArrayList<byte[]> get_body(){
         return this.body;
     }
 }

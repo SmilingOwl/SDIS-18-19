@@ -13,11 +13,11 @@ public class SendMessage {
     }
 
     public void run() {
+        byte[] to_send = message.build();
         try {
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.address, this.port);
-            socket.getOutputStream().write(message.build());
-            socket.close(); 
+            socket.getOutputStream().write(to_send);
             //TODO receive ACK, perhaps, and implement timeout, if it doesn't receive ACK in timeout, sends again x3?
             //Failure Tolerance - if error x3 and communicating with manager try another manager
         } catch(Exception ex) {
