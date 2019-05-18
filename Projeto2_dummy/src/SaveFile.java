@@ -25,23 +25,10 @@ public class SaveFile {
     SaveFile(String file_path, int rep_degree) {
         this.file = new File(file_path);
         this.rep_degree = rep_degree;
-        String unhashed_id = file.getName() + file.getParent() + file.lastModified();
+        String unhashed_id = file.getName(); //ask number id to identify file, to allow multiple files with the same name in the system TODO
+        this.id = this.generate_id(unhashed_id);
         body = new ArrayList<byte[]>();
         
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] encoded_hash = digest.digest(unhashed_id.getBytes(StandardCharsets.UTF_8));
-            StringBuffer hex_string = new StringBuffer();
-            for (int i = 0; i < encoded_hash.length; i++) {
-                String hex = Integer.toHexString(0xff & encoded_hash[i]);
-                if(hex.length() == 1) hex_string.append('0');
-                    hex_string.append(hex);
-            }
-            this.id = hex_string.toString();
-        } catch(Exception e) {
-            System.out.println("Error in SHA-256.");
-        }
-
         try {
             byte[] buffer = new byte[16000];
             FileInputStream file_is = new FileInputStream(this.file);
@@ -97,6 +84,8 @@ public class SaveFile {
         }
     }
 
+    /******************** Getters *********************/
+
     public String get_id() {
         return this.id;
     }
@@ -115,5 +104,25 @@ public class SaveFile {
 
     public ArrayList<byte[]> get_body(){
         return this.body;
+    }
+
+    /******************** Others *********************/
+    public static String generate_id(String unhashed_id) {
+        String to_return = "";
+         try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] encoded_hash = digest.digest(unhashed_id.getBytes(StandardCharsets.UTF_8));
+            StringBuffer hex_string = new StringBuffer();
+            for (int i = 0; i < encoded_hash.length; i++) {
+                String hex = Integer.toHexString(0xff & encoded_hash[i]);
+                if(hex.length() == 1) hex_string.append('0');
+                    hex_string.append(hex);
+            }
+            to_return = hex_string.toString();
+        } catch(Exception e) {
+            System.out.println("Error in SHA-256.");
+        }
+
+        return to_return;
     }
 }

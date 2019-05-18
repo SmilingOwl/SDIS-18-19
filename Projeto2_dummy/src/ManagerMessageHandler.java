@@ -42,16 +42,7 @@ public class ManagerMessageHandler implements Runnable {
         System.out.println("Received backup request.");
         int peer_id = this.message.get_peer_id();
         int rep_degree = message.get_rep_degree();
-        ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
-        int n = 0;
-        //improve this by getting the peers with fewer files stored TODO
-        for(Integer id : this.owner.get_peers().keySet()) {
-            if(n >= rep_degree)
-                break;
-            if(id != peer_id) {
-                peers.add(this.owner.get_peers().get(id));
-            }
-        }
+        ArrayList<PeerInfo> peers = get_peers_with_fewer_files(rep_degree, peer_id);
         Message message = new Message("B_AVAILABLE", -1, null, rep_degree, null, null, -1, peers);
         try {
             socket.getOutputStream().write(message.build());
@@ -60,6 +51,33 @@ public class ManagerMessageHandler implements Runnable {
         } catch(Exception ex) {
             System.out.println("Error writing to socket.");
         }
+    }
+
+    private ArrayList<PeerInfo> get_peers_with_fewer_files(int rep_degree, int peer_id) {
+        ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
+        int max_peers = rep_degree;
+        if(this.owner.get_peers().size() - 1 < rep_degree) {
+            max_peers = this.owner.get_peers().size() - 1;
+        }
+
+        while(peers.size() < max_peers) {
+            int min = Integer.MAX_VALUE;
+            PeerInfo min_peer = null;
+            for(PeerInfo available_peer : this.owner.get_peers().values()) {
+                if(available_peer.get_id() != peer_id && !peers.contains(available_peer)) {
+                    if(available_peer.get_count_files() < min) {
+                        min_peer = available_peer;
+                    }
+                }
+            }
+            if(min_peer == null) {
+                System.out.println("Error: On getting fewer files.");
+                break;
+            }
+            peers.add(min_peer);
+        }
+
+        return peers;
     }
 
     private void stored_message() {

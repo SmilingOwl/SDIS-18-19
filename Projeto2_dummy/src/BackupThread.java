@@ -8,7 +8,6 @@ public class BackupThread implements Runnable {
     private String file_name;
     private int rep_degree;
     private Peer owner;
-    private Message received_message;
 
     public BackupThread(String file_name, int rep_degree, Peer owner) {
         this.file_name = file_name;
