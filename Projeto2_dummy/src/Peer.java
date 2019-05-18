@@ -15,7 +15,6 @@ public class Peer implements RemoteInterface {
     private int manager_port;
     private String manager_address;
     private ConcurrentHashMap<String, SaveFile> files;
-    private ConcurrentHashMap<String, SaveFile> backed_up_files;
     private ScheduledThreadPoolExecutor thread_executor;
 
     public Peer(int id, String remote_object_name, int port, String manager_address, int manager_port) {
@@ -24,8 +23,7 @@ public class Peer implements RemoteInterface {
         this.manager_port = manager_port;
         this.manager_address = manager_address;
         this.files = new ConcurrentHashMap<String, SaveFile>();
-        this.backed_up_files = new ConcurrentHashMap<String, SaveFile>();
-        this.thread_executor = new ScheduledThreadPoolExecutor(300);
+        this.thread_executor = new ScheduledThreadPoolExecutor(3000);
 
         try{
             this.address = InetAddress.getLocalHost().getHostAddress();
@@ -85,10 +83,6 @@ public class Peer implements RemoteInterface {
         return this.files;
     }
 
-    public ConcurrentHashMap<String, SaveFile> get_backed_up_files() {
-        return this.files;
-    }
-
     /************************** Protocols functions **************************/
 
     public synchronized String backup_file(String file_name, int rep_degree) throws RemoteException {
@@ -97,16 +91,7 @@ public class Peer implements RemoteInterface {
     }
 
     public String restore_file(String file_name) throws RemoteException {
-        System.out.println("Initiated restore of a file.");
-
-        SaveFile file = this.files.get(file_name);      
-        if(file == null)
-            return "File not found.";
-        String file_id = file.get_id();
-        
-        //TODO - send RESTORE message to PeerManager (new thread for that)
-
-        System.out.println("Returned from restore of a file.");
+        this.thread_executor.execute(new RestoreThread(file_name, this));
         return "File restored successfully.";
     }
     

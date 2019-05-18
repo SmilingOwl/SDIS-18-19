@@ -38,7 +38,7 @@ class Message {
 
        /** Backup Protocol:
               --BACKUP <rep_degree> <CRLF><CRLF>
-              --B_AVAILABLE <address> <port> <address> <port>...
+              --AVAILABLE <address> <port> <address> <port>...
               --P2P_BACKUP <file_id> <body>
               --STORED <peer_id> <file_id>
         */  
@@ -46,7 +46,7 @@ class Message {
            this.peer_id = Integer.parseInt(message_parts[1]);
            this.rep_degree = Integer.parseInt(message_parts[2]);
 
-       }else if(this.type.equals("B_AVAILABLE")){  
+       }else if(this.type.equals("AVAILABLE")){  
             PeerInfo peer;
             for (int i= 1; i< message_parts.length; i++){
                 peer = new PeerInfo(-1, Integer.parseInt(message_parts[i+1]), message_parts[i]);
@@ -57,7 +57,6 @@ class Message {
        }else if(this.type.equals("P2P_BACKUP")){
            this.file_id = message_parts[1];
            this.rep_degree = Integer.parseInt(message_parts[2]);
-           this.separate_body(message);
 
        }else if(this.type.equals("STORED")){
             this.peer_id = Integer.parseInt(message_parts[1]);
@@ -65,28 +64,18 @@ class Message {
 
        /** RESTORE Protocol:
               --RESTORE <file_id> <CRLF><CRLF>
-              --R_AVAILABLE <address> <port>
+              --AVAILABLE <address> <port>
               --P2P_RESTORE <file_id>
-              --FILE <file_id> <body>
+              --FILE <file_id> <num_chunks> -> <body> divided in parts
         */     
        }else if(this.type.equals("RESTORE")){
-           this.file_id = message_parts[1];
-
-       }else if(this.type.equals("R_AVAILABLE")){
-        PeerInfo peer;
-        for (int i= 0; i< message_parts.length; i++){
-            peer = new PeerInfo(-1, Integer.parseInt(message_parts[i+1]), message_parts[i]);
-            this.peers.add(peer);
-            i++;
-        }
-            
-
+           this.peer_id = Integer.parseInt(message_parts[1]);
+           this.file_id = message_parts[2];
        }else if(this.type.equals("P2P_RESTORE")){
            this.file_id = message_parts[1];
-
        }else if(this.type.equals("FILE")){
            this.file_id = message_parts[1];
-           this.separate_body(message);
+           this.rep_degree = Integer.parseInt(message_parts[2]);
 
        /** DELETE Protocol:
               --DELETE <file_id> 
@@ -107,14 +96,10 @@ class Message {
 
         if (this.type.equals("JOIN")) {
             message = this.type + " " + this.peer_id +
-            " " + this.address + " " + this.port + " \r\n\r\n";     
-            m_body = message.getBytes();
-        
-        }else if(this.type.equals("BACKUP")){
+            " " + this.address + " " + this.port + " \r\n\r\n";        
+        } else if(this.type.equals("BACKUP")){
             message = this.type + " " + this.peer_id + " " + this.rep_degree + " \r\n\r\n";
-            m_body = message.getBytes();
-
-        }else if(this.type.equals("B_AVAILABLE")){
+        } else if(this.type.equals("AVAILABLE")){
             String message_ini = this.type + " ";
             String message_end ="\r\n\r\n";
             String message_middle = "";
@@ -123,54 +108,24 @@ class Message {
                 message_middle += this.peers.get(i).get_address() + " " + this.peers.get(i).get_port()+ " ";
             }
 
-            message= message_ini + message_middle + message_end;
-            m_body = message.getBytes();
-        
-        }else if(this.type.equals("P2P_BACKUP")){
+            message = message_ini + message_middle + message_end;
+        } else if(this.type.equals("P2P_BACKUP")){
             message= this.type + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
-            
-            m_body = message.getBytes();
-
-        }else if(this.type.equals("STORED")){
+        } else if(this.type.equals("STORED")){
             message= this.type +  " " + this.peer_id + " " + this.file_id + " \r\n\r\n";
-            m_body = message.getBytes();
-
-        }else if(this.type.equals("RESTORE")){
+        } else if(this.type.equals("RESTORE")){
+            message= this.type + " " + this.peer_id + " " + this.file_id + " \r\n\r\n";
+        } else if(this.type.equals("P2P_RESTORE")){
             message= this.type + " " + this.file_id + " \r\n\r\n";
-            m_body = message.getBytes();
-
-        }else if(this.type.equals("R_AVAILABLE")){
-            String message_ini = this.type + " ";
-            String message_end ="\r\n\r\n";
-            String message_middle="";
-
-            for(int i= 0; i< this.peers.size(); i++){
-                message_middle += this.peers.get(i).get_address() + " " + this.peers.get(i).get_port()+ " ";
-            }
-
-            message= message_ini + message_middle + message_end;
-            m_body = message.getBytes();
-
-        }else if(this.type.equals("P2P_RESTORE")){
+        } else if(this.type.equals("FILE")){
+            message= this.type + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
+        } else if(this.type.equals("DELETE")){
             message= this.type + " " + this.file_id + " \r\n\r\n";
-            m_body = message.getBytes();
-
-        }else if(this.type.equals("FILE")){
+        } else if(this.type.equals("M_DELETE")){
             message= this.type + " " + this.file_id + " \r\n\r\n";
-            byte[] m = message.getBytes();
-            m_body = new byte[m.length + body.length];
-            System.arraycopy(m, 0, m_body, 0, m.length);
-            System.arraycopy(this.body, 0, m_body, m.length, this.body.length);
+        } else return null;
 
-        }else if(this.type.equals("DELETE")){
-            message= this.type + " " + this.file_id + " \r\n\r\n";
-            m_body = message.getBytes();
-
-        }else if(this.type.equals("M_DELETE")){
-            message= this.type + " " + this.file_id + " \r\n\r\n";
-            m_body = message.getBytes();
-        }else return null;
-
+        m_body = message.getBytes();
         return m_body;
     }
 

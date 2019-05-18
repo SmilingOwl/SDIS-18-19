@@ -21,9 +21,12 @@ public class ManagerMessageHandler implements Runnable {
             this.backup_request();
         } else if (this.message.get_type().equals("STORED")) {
             this.stored_message();
+        } else if (this.message.get_type().equals("RESTORE")) {
+            this.restore_request();
         }
     }
 
+    /*************** Message Handler Functions ***************/
     public void peer_join() {
         int peer_id = this.message.get_peer_id();
         int port = this.message.get_port();
@@ -35,24 +38,63 @@ public class ManagerMessageHandler implements Runnable {
             this.owner.get_peers().put(peer_id, peer_info);
             System.out.println("Peer " + peer_id + " joined the system.");
         }
-        //socket DONE or ERROR messages?
     }
 
     public void backup_request() {
-        System.out.println("Received backup request.");
+        System.out.println("\nReceived backup request.");
         int peer_id = this.message.get_peer_id();
         int rep_degree = message.get_rep_degree();
         ArrayList<PeerInfo> peers = get_peers_with_fewer_files(rep_degree, peer_id);
-        Message message = new Message("B_AVAILABLE", -1, null, rep_degree, null, null, -1, peers);
+        Message message = new Message("AVAILABLE", -1, null, rep_degree, null, null, -1, peers);
         try {
             socket.getOutputStream().write(message.build());
-            System.out.println("Sent message.");
-            socket.close();
+            System.out.println("Sent available message.");
         } catch(Exception ex) {
             System.out.println("Error writing to socket.");
         }
     }
 
+    private void stored_message() {
+        int peer_id = message.get_peer_id();
+        String file_id = message.get_file_id();
+        ArrayList<Integer> peers_backing_up_file = this.owner.get_files().get(file_id);
+        if(peers_backing_up_file == null) {
+            ArrayList<Integer> new_peers = new ArrayList<Integer>();
+            new_peers.add(peer_id);
+            this.owner.get_files().put(file_id, new_peers);
+        } else {
+            peers_backing_up_file.add(peer_id);
+        }
+        
+        System.out.println("\nPeer " + peer_id + " is backing file with id " + file_id);
+        //DEBUG TODO delete
+        for(String key : this.owner.get_files().keySet()) {
+            System.out.print("key - ");
+            for(int i = 0; i < this.owner.get_files().get(key).size(); i++) {
+                System.out.println(this.owner.get_files().get(key).get(i) + " ; ");
+            }
+            System.out.println();
+        }
+    }
+
+    public void restore_request() {
+        System.out.println("\nReceived restore request.");
+        String file_id = this.message.get_file_id();
+        ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
+        for(int i = 0; i < this.owner.get_files().get(file_id).size(); i++) {
+            PeerInfo peer = this.owner.get_peers().get(this.owner.get_files().get(file_id).get(i));
+            peers.add(peer);
+        }
+        Message message = new Message("AVAILABLE", -1, null, -1, null, null, -1, peers);
+        try {
+            socket.getOutputStream().write(message.build());
+            System.out.println("Sent available message.");
+        } catch(Exception ex) {
+            System.out.println("Error writing to socket.");
+        }
+    }
+
+    /*************** Auxiliary Functions ***************/
     private ArrayList<PeerInfo> get_peers_with_fewer_files(int rep_degree, int peer_id) {
         ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
         int max_peers = rep_degree;
@@ -78,28 +120,5 @@ public class ManagerMessageHandler implements Runnable {
         }
 
         return peers;
-    }
-
-    private void stored_message() {
-        int peer_id = message.get_peer_id();
-        String file_id = message.get_file_id();
-        ArrayList<Integer> peers_backing_up_file = this.owner.get_files().get(file_id);
-        if(peers_backing_up_file == null) {
-            ArrayList<Integer> new_peers = new ArrayList<Integer>();
-            new_peers.add(peer_id);
-            this.owner.get_files().put(file_id, new_peers);
-        } else {
-            peers_backing_up_file.add(peer_id);
-        }
-        
-        System.out.println("Peer " + peer_id + " is backing file with id " + file_id);
-        //DEBUG TODO delete
-        for(String key : this.owner.get_files().keySet()) {
-            System.out.print("key - ");
-            for(int i = 0; i < this.owner.get_files().get(key).size(); i++) {
-                System.out.println(this.owner.get_files().get(key).get(i) + " ");
-            }
-            System.out.println();
-        }
     }
 }

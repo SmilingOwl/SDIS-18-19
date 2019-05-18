@@ -40,6 +40,7 @@ public class SaveFile {
                 buffer = new byte[16000];
                 num_buf = buffered_is.read(buffer);
             }
+            file_is.close();
         } catch(Exception ex) {
             System.out.println("Error reading from file.");
         }
@@ -63,23 +64,26 @@ public class SaveFile {
         }
     }
 
-    SaveFile(int peer_id, String file_name, ArrayList<byte[]> file) {
+    SaveFile(int peer_id, String file_name, String protocol, ArrayList<byte[]> file) {
+        String[] parts = file_name.split("/");
+        String file_to_write = parts[parts.length-1];
+
         File peer_dir = new File("peer" + peer_id);
         if(!peer_dir.exists()) {
             peer_dir.mkdir();
         }
-        File backup_dir = new File("peer" + peer_id + "/backup");
+        File backup_dir = new File("peer" + peer_id + "/" + protocol);
         if(!backup_dir.exists()) {
             backup_dir.mkdir();
         }
         try {
-            FileOutputStream fos = new FileOutputStream("peer" + peer_id + "/backup/" + file_name);
+            FileOutputStream fos = new FileOutputStream("peer" + peer_id + "/" + protocol + "/" + file_to_write);
             for(int i = 0; i < file.size(); i++) {
                 fos.write(file.get(i));
             }
             fos.close();
         } catch(Exception ex) {
-            System.out.println("Error in writing to restored file.");
+            System.out.println("Error in writing to file.");
             ex.printStackTrace();
         }
     }

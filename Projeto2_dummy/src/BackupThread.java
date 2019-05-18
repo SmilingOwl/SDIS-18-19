@@ -37,7 +37,7 @@ public class BackupThread implements Runnable {
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
             socket.getOutputStream().write(message.build());
-            System.out.println("Sent backup request.");
+            System.out.println("Sent backup request to manager.");
             byte[] data = new byte[16000];
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             InputStream stream = socket.getInputStream();
@@ -47,13 +47,12 @@ public class BackupThread implements Runnable {
             received_message = new Message(message_data);
             socket.close();
         } catch(Exception ex) {
-            System.out.println("Error connecting to server.");
+            System.out.println("Error connecting to manager.");
         }
         return received_message;
     }
 
-    public Message backup_request(Message message, int port, String address, SaveFile file) {
-        Message received_message = null;
+    public void backup_request(Message message, int port, String address, SaveFile file) {
         try {
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
@@ -70,12 +69,10 @@ public class BackupThread implements Runnable {
                     socket.getOutputStream().write(file.get_body().get(i));
                 }
             }
-            System.out.println("Sent backup request.");
+            System.out.println("Sent backup request to peer.");
             socket.close();
         } catch(Exception ex) {
-            System.out.println("Error connecting to server.");
-            ex.printStackTrace(); //TODO delete
+            System.out.println("Error connecting to peer.");
         }
-        return received_message;
     }
 }
