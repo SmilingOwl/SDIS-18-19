@@ -23,6 +23,10 @@ public class ManagerMessageHandler implements Runnable {
             this.stored_message();
         } else if (this.message.get_type().equals("RESTORE")) {
             this.restore_request();
+        } else if (this.message.get_type().equals("DELETE")) {
+            this.delete_request();
+        } else if (this.message.get_type().equals("DELETED")) {
+            this.deleted_message();
         }
     }
 
@@ -105,6 +109,10 @@ public class ManagerMessageHandler implements Runnable {
         System.out.println("\nReceived delete request.");
         String file_id = this.message.get_file_id();
         ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
+        for(int i = 0; i < this.owner.get_files().get(file_id).size(); i++) {
+            PeerInfo peer = this.owner.get_peers().get(this.owner.get_files().get(file_id).get(i));
+            peers.add(peer);
+        }
         Message message = new Message("AVAILABLE", -1, null, -1, null, null, -1, peers);
         try {
             socket.getOutputStream().write(message.build());
@@ -112,6 +120,11 @@ public class ManagerMessageHandler implements Runnable {
         } catch(Exception ex) {
             System.out.println("Error writing to socket.");
         }
+    }
+
+    private void deleted_message() {
+        //TODO delete peer id from files hashmap, where file_id is the one received in the message.
+        //if arraylist corresponding to the file_id in the hashmap is empty, delete file_id from hashmap.
     }
 
     /*************** Auxiliary Functions ***************/

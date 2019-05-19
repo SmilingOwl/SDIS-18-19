@@ -85,7 +85,8 @@ class Message {
            this.file_id = message_parts[1];
 
        }else if(this.type.equals("DELETED")){
-           this.file_id = message_parts[1];
+            this.peer_id = Integer.parseInt(message_parts[1]);
+            this.file_id = message_parts[2];
        }
 
    }
@@ -122,7 +123,7 @@ class Message {
         } else if(this.type.equals("DELETE")){
             message= this.type + " " + this.file_id + " \r\n\r\n";
         } else if(this.type.equals("DELETED")){
-            message= this.type + " " + this.file_id + " \r\n\r\n";
+            message= this.type + " " + this.peer_id + " " + this.file_id + " \r\n\r\n";
         } else return null;
 
         m_body = message.getBytes();

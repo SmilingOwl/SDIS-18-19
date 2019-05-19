@@ -27,7 +27,7 @@ public class DeleteThread implements Runnable {
         //sending delete message to all available peers
         for(int i = 0; i < address_list.size(); i++) {
             Message to_peers = new Message("DELETE", this.owner.get_id(), file_id, -1, null, null, -1, null);
-            this.delete_request(to_peers, address_list);
+            this.delete_request(to_peers, address_list.get(i).get_port(), address_list.get(i).get_address());
         }
         
     }
@@ -55,24 +55,13 @@ public class DeleteThread implements Runnable {
         return received_message;
     }
 
-    public void delete_request(Message message, ArrayList<PeerInfo> address_list) {
-        String address = address_list.get(0).get_address();
-        int port = address_list.get(0).get_port();
+    public void delete_request(Message message, int port, String address) {
   
         try {
             /******** create socket ********/
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
             socket.getOutputStream().write(message.build());
-            byte[] data = new byte[16000];
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            InputStream stream = socket.getInputStream();
-            int nRead = stream.read(data, 0, data.length);
-            buffer.write(data, 0, nRead);
-            byte[] message_data = buffer.toByteArray();
-            String answer = new String(message_data);
-
-            socket.close();
             System.out.println("Sent delete request to peer.");
         } catch(Exception ex) {
             System.out.println("Error connecting to peer.");

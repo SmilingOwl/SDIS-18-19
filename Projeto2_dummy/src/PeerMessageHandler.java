@@ -26,7 +26,7 @@ public class PeerMessageHandler implements Runnable {
 
     /*************** Message Handler Functions ***************/
     public void backup_request() {
-        System.out.println("Received backup request.");
+        System.out.println("\nReceived backup request.");
         String file_id = this.message.get_file_id();
         int num_chunks = this.message.get_rep_degree();
         ArrayList<byte[]> body = new ArrayList<byte[]>();
@@ -61,7 +61,7 @@ public class PeerMessageHandler implements Runnable {
     }
 
     public void restore_request() {
-        System.out.println("Received restore request.");
+        System.out.println("\nReceived restore request.");
         String file_id = this.message.get_file_id();
         SaveFile file_to_send = new SaveFile("peer" + this.owner.get_id() + "/backup/" + file_id, 0);
         Message file_message = new Message("FILE", this.owner.get_id(), file_id, file_to_send.get_body().size(), null,
@@ -86,11 +86,12 @@ public class PeerMessageHandler implements Runnable {
     }
 
     public void delete_request() {
-        System.out.println("Received restore request.");
+        System.out.println("\nReceived restore request.");
         String file_id = this.message.get_file_id();
                 
         try {
             this.owner.get_files().remove(file_id);
+            System.out.println("deleted file");
 
         } catch (Exception ex) {
             System.out.println("Error writing to socket.");
