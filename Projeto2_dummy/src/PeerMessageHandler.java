@@ -56,7 +56,7 @@ public class PeerMessageHandler implements Runnable {
         SaveFile write = new SaveFile(this.owner.get_id(), file_id, "backup", body);
         Message message = new Message("STORED", this.owner.get_id(), file_id, -1, null, null, -1, null);
         SendMessage send_stored = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(),
-                message);
+                message, this.owner.get_context().getSocketFactory());
         send_stored.run();
     }
 
@@ -98,7 +98,8 @@ public class PeerMessageHandler implements Runnable {
 
         }
         Message message = new Message("DELETED", this.owner.get_id(), file_id, -1, null, null, -1, null);
-        SendMessage send_deleted = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(), message);
+        SendMessage send_deleted = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(), message,
+            this.owner.get_context().getSocketFactory());
         send_deleted.run();
     }
 }

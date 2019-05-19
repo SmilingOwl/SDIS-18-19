@@ -27,7 +27,7 @@ public class RestoreThread implements Runnable {
     public Message restore_request_manager(Message message, int port, String address) {
         Message received_message = null;
         try {
-            SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocketFactory socketfactory = this.owner.get_context().getSocketFactory();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
             socket.getOutputStream().write(message.build());
             System.out.println("Sent restore request to manager.");
@@ -51,7 +51,7 @@ public class RestoreThread implements Runnable {
         ArrayList<byte[]> body = new ArrayList<byte[]>();
         try {
             /******** create socket ********/
-            SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocketFactory socketfactory = this.owner.get_context().getSocketFactory();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
             
             /******** write restore message ********/

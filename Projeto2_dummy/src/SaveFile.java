@@ -3,65 +3,40 @@ import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.io.IOException;
-import java.nio.channels.*;
 import java.nio.ByteBuffer;
-import java.nio.file.*;
-import java.net.URI;
-import java.io.FileOutputStream;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.file.StandardOpenOption;
+import java.nio.channels.CompletionHandler;
+import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.nio.file.Files;
 import java.io.FileInputStream;
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
+import java.util.concurrent.Future;
 
 
 public class SaveFile {
     private String id;
     private int rep_degree;
-    private File file;
     private String file_name;
     private ArrayList<byte[]> body;
     private Peer peer;
 
     SaveFile(String file_path, int rep_degree) {
-        this.file = new File(file_path);
         this.rep_degree = rep_degree;
-        String unhashed_id = file.getName(); //ask number id to identify file, to allow multiple files with the same name in the system TODO
-        this.id = this.generate_id(unhashed_id);
+        String unhashed_id = file_path; //ask number id to identify file, to allow multiple files with the same name in the system TODO
+        this.id = SaveFile.generate_id(unhashed_id);
         body = new ArrayList<byte[]>();
         
-        try {
-            byte[] buffer = new byte[16000];
-            FileInputStream file_is = new FileInputStream(this.file);
-            BufferedInputStream buffered_is = new BufferedInputStream(file_is);
-            int num_buf = buffered_is.read(buffer);
-            while(num_buf > 0) {
-                byte[] buf = Arrays.copyOfRange(buffer, 0, num_buf);
-                this.body.add(buf);
-                buffer = new byte[16000];
-                num_buf = buffered_is.read(buffer);
-            }
-            file_is.close();
-        } catch(Exception ex) {
-            System.out.println("Error reading from file.");
-        }
+        this.read(file_path);
     }
 
     SaveFile(String file_name, String id, int rep_degree) {
         this.file_name = file_name;
         this.id = id;
         this.rep_degree = rep_degree;
-    }
-
-    SaveFile(String file_name, Peer peer) {
-        this.file_name = file_name;
-        this.peer = peer;
-        this.id = this.peer.get_files().get(this.file_name).get_id();
-        try {
-            File file = new File("peer" + this.peer.get_id() + "/restored/" + this.file_name);
-            file.createNewFile();            
-        } catch(Exception ex) {
-            System.out.println("Error creating restored file.");
-        }
     }
 
     SaveFile(int peer_id, String file_name, String protocol, ArrayList<byte[]> file) {
@@ -76,15 +51,16 @@ public class SaveFile {
         if(!backup_dir.exists()) {
             backup_dir.mkdir();
         }
+
         try {
-            FileOutputStream fos = new FileOutputStream("peer" + peer_id + "/" + protocol + "/" + file_to_write);
+            ByteArrayOutputStream output_stream = new ByteArrayOutputStream();
             for(int i = 0; i < file.size(); i++) {
-                fos.write(file.get(i));
+                output_stream.write(file.get(i));
             }
-            fos.close();
+            byte[] file_buffer = output_stream.toByteArray();
+            this.write("peer" + peer_id + "/" + protocol + "/" + file_to_write, file_buffer);
         } catch(Exception ex) {
-            System.out.println("Error in writing to file.");
-            ex.printStackTrace();
+            System.out.println("Error writing to file.");
         }
     }
 
@@ -92,10 +68,6 @@ public class SaveFile {
 
     public String get_id() {
         return this.id;
-    }
-
-    public File get_file(){
-        return this.file;
     }
 
     public String get_name(){
@@ -128,5 +100,79 @@ public class SaveFile {
         }
 
         return to_return;
+    }
+
+    /** Functions to write and read from files */
+
+    private void write(String file_path, byte[] content) {
+    
+        try {
+            Path path = Paths.get(file_path);
+            if(!Files.exists(path)){
+                Files.createFile(path);
+            }
+            AsynchronousFileChannel file_channel = AsynchronousFileChannel.open(path, StandardOpenOption.WRITE);
+        
+            ByteBuffer buffer = ByteBuffer.wrap(content);
+            buffer.put(content);
+            buffer.flip();
+
+            file_channel.write(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+
+                @Override
+                public void completed(Integer result, ByteBuffer attachment) {
+                    System.out.println("Successfully wrote to file.");
+                }
+
+                @Override
+                public void failed(Throwable exc, ByteBuffer attachment) {
+                    System.out.println("Error writing to file.");
+                    exc.printStackTrace();
+                }
+            }); 
+        } catch (Exception ex) {
+            System.out.println("Error writing to file.");
+        }
+    }
+
+    private void read(String file_path) {
+        try {
+            Path path = Paths.get(file_path);
+            File file = path.toFile();
+            if(!file.exists()){
+                System.out.println("Error: File doesn't exist.");
+            }
+            
+            AsynchronousFileChannel channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
+            ByteBuffer buffer = ByteBuffer.allocate((int)file.length());
+            Future<Integer> result = channel.read(buffer, 0);
+                
+            while (!result.isDone()) ;
+            
+            System.out.println("Reading done from file successfully.");
+
+            buffer.flip();
+                
+            byte[] content = new byte[buffer.capacity()];
+            int i = 0;
+            while (buffer.hasRemaining()) {
+                content[i] = buffer.get();    
+                i++; 
+            }
+            buffer.clear();
+
+            ByteArrayInputStream input_stream = new ByteArrayInputStream(content);
+            byte[] reader_buffer = new byte[16000];
+            int num_buf = input_stream.read(reader_buffer);
+            while(num_buf > 0) {
+                byte[] buf = Arrays.copyOfRange(reader_buffer, 0, num_buf);
+                this.body.add(buf);
+                reader_buffer = new byte[16000];
+                num_buf = input_stream.read(reader_buffer);
+            }
+            channel.close();
+        } catch(Exception ex) {
+            System.out.println("Error reading from file.");
+        }
     }
 }

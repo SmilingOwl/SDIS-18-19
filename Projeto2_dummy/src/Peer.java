@@ -8,7 +8,13 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.FileInputStream;
 import java.net.InetAddress;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+import javax.security.cert.X509Certificate;
+import java.security.KeyStore;
 
 public class Peer implements RemoteInterface {
     private int id;
@@ -18,6 +24,7 @@ public class Peer implements RemoteInterface {
     private String manager_address;
     private ConcurrentHashMap<String, SaveFile> files;
     private ScheduledThreadPoolExecutor thread_executor;
+    private SSLContext context;
 
     public Peer(int id, String remote_object_name, int port, String manager_address, int manager_port) {
         this.id = id;
@@ -34,10 +41,14 @@ public class Peer implements RemoteInterface {
             return;
         }
 
+        if(this.set_context()) {
+            return;
+        }
+
         //Join the network
         try {
             Message message = new Message("JOIN", this.id, null, -1, null, this.address, this.port, null);
-            SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocketFactory socketfactory = this.context.getSocketFactory();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.manager_address, this.manager_port);
             socket.getOutputStream().write(message.build());
             byte[] data = new byte[16000];
@@ -75,6 +86,27 @@ public class Peer implements RemoteInterface {
         this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, this));
     }
 
+    public boolean set_context() {
+        try {
+            this.context = SSLContext.getInstance("TLS");
+            KeyManagerFactory key_manager_factory = KeyManagerFactory.getInstance("SunX509");
+            TrustManagerFactory trust_manager_factory = TrustManagerFactory.getInstance("SunX509");
+            char[] passphrase = "password".toCharArray();
+            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks2 = KeyStore.getInstance("JKS");
+    
+            ks.load(new FileInputStream("keystore.jks"), passphrase);
+            ks2.load(new FileInputStream("truststore.ts"), passphrase);
+            trust_manager_factory.init(ks2);
+            key_manager_factory.init(ks, passphrase);
+            this.context.init(key_manager_factory.getKeyManagers(), trust_manager_factory.getTrustManagers(), null);
+        } catch(Exception ex) {
+            System.out.println("Error setting up context");
+            return true;
+        }
+        return false;
+    }
+
     /************************** Getters **************************/
 
     public int get_port() {
@@ -103,6 +135,10 @@ public class Peer implements RemoteInterface {
 
     public ConcurrentHashMap<String, SaveFile> get_files() {
         return this.files;
+    }
+
+    public SSLContext get_context() {
+        return this.context;
     }
 
     /************************** Protocols functions **************************/
