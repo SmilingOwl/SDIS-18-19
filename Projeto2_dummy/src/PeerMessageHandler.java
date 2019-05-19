@@ -7,7 +7,7 @@ public class PeerMessageHandler implements Runnable {
     private Message message;
     private Peer owner;
     private SSLSocket socket;
-    
+
     public PeerMessageHandler(Peer owner, SSLSocket socket, byte[] msg) {
         this.owner = owner;
         this.message = new Message(msg);
@@ -19,6 +19,8 @@ public class PeerMessageHandler implements Runnable {
             this.backup_request();
         } else if (this.message.get_type().equals("P2P_RESTORE")) {
             this.restore_request();
+        } else if(this.message.get_type().equals("DELETE")){
+            this.delete_request();
         }
     }
 
@@ -35,23 +37,24 @@ public class PeerMessageHandler implements Runnable {
             byte[] data = new byte[16000];
             InputStream stream = socket.getInputStream();
             int nRead = stream.read(data, 0, data.length);
-            while(nRead > 0) {
+            while (nRead > 0) {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                 buffer.write(data, 0, nRead);
                 byte[] message_data = buffer.toByteArray();
                 body.add(message_data);
-                if(n == num_chunks-1)
+                if (n == num_chunks - 1)
                     break;
                 nRead = stream.read(data, 0, data.length);
                 n++;
             }
             socket.close();
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             System.out.println("Error writing to socket.");
         }
         SaveFile write = new SaveFile(this.owner.get_id(), file_id, "backup", body);
         Message message = new Message("STORED", this.owner.get_id(), file_id, -1, null, null, -1, null);
-        SendMessage send_stored = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(), message);
+        SendMessage send_stored = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(),
+                message);
         send_stored.run();
     }
 
@@ -59,15 +62,32 @@ public class PeerMessageHandler implements Runnable {
         System.out.println("Received restore request.");
         String file_id = this.message.get_file_id();
         SaveFile file_to_send = new SaveFile("peer" + this.owner.get_id() + "/backup/" + file_id, 0);
-        Message file_message = new Message("FILE", this.owner.get_id(), file_id, file_to_send.get_body().size(), null, null, -1, null);
+        Message file_message = new Message("FILE", this.owner.get_id(), file_id, file_to_send.get_body().size(), null,
+                null, -1, null);
         try {
             socket.getOutputStream().write(file_message.build());
             System.out.println("Sent file message");
-            for(int i = 0; i < file_to_send.get_body().size(); i++) {
+            for (int i = 0; i < file_to_send.get_body().size(); i++) {
                 socket.getOutputStream().write(file_to_send.get_body().get(i));
             }
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             System.out.println("Error writing to socket.");
         }
+    }
+
+    public void delete_request() {
+        System.out.println("Received restore request.");
+        String file_id = this.message.get_file_id();
+                
+        try {
+            this.owner.get_files().remove(file_id);
+
+        } catch (Exception ex) {
+            System.out.println("Error writing to socket.");
+
+        }
+        Message message = new Message("DELETED", this.owner.get_id(), file_id, -1, null, null, -1, null);
+        SendMessage send_deleted = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(), message);
+        send_deleted.run();
     }
 }

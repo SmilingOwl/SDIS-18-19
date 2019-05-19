@@ -94,6 +94,19 @@ public class ManagerMessageHandler implements Runnable {
         }
     }
 
+    public void delete_request() {
+        System.out.println("\nReceived delete request.");
+        String file_id = this.message.get_file_id();
+        ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
+        Message message = new Message("AVAILABLE", -1, null, -1, null, null, -1, peers);
+        try {
+            socket.getOutputStream().write(message.build());
+            System.out.println("Sent available message.");
+        } catch(Exception ex) {
+            System.out.println("Error writing to socket.");
+        }
+    }
+
     /*************** Auxiliary Functions ***************/
     private ArrayList<PeerInfo> get_peers_with_fewer_files(int rep_degree, int peer_id) {
         ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();

@@ -24,7 +24,7 @@ public class DeleteThread implements Runnable {
         //AVAILABLE MESSAGE
         ArrayList<PeerInfo> address_list = manager_answer.get_peers();
         
-        //sending delete messager to all available peers
+        //sending delete message to all available peers
         for(int i = 0; i < address_list.size(); i++) {
             Message to_peers = new Message("DELETE", this.owner.get_id(), file_id, -1, null, null, -1, null);
             this.delete_request(to_peers, address_list);
@@ -71,10 +71,6 @@ public class DeleteThread implements Runnable {
             buffer.write(data, 0, nRead);
             byte[] message_data = buffer.toByteArray();
             String answer = new String(message_data);
-
-            if(answer.equals("DELETED")){
-                // Apago o file aqui? 
-            }
 
             socket.close();
             System.out.println("Sent delete request to peer.");
