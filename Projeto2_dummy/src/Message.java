@@ -79,7 +79,7 @@ class Message {
 
        /** DELETE Protocol:
               --DELETE <file_id> 
-              --M_DELETE <file_id>
+              --DELETED 
         */
        }else if(this.type.equals("DELETE")){
            this.file_id = message_parts[1];
