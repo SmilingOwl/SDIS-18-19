@@ -4,9 +4,11 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ConcurrentHashMap;
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.InetAddress;
 
 public class Peer implements RemoteInterface {
     private int id;
@@ -33,9 +35,29 @@ public class Peer implements RemoteInterface {
         }
 
         //Join the network
-        Message message = new Message("JOIN", this.id, null, -1, null, this.address, this.port, null);
-        SendMessage send_join = new SendMessage(this.manager_address, this.manager_port, message);
-        send_join.run();
+        try {
+            Message message = new Message("JOIN", this.id, null, -1, null, this.address, this.port, null);
+            SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.manager_address, this.manager_port);
+            socket.getOutputStream().write(message.build());
+            byte[] data = new byte[16000];
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            InputStream stream = socket.getInputStream();
+            int nRead = stream.read(data, 0, data.length);
+            buffer.write(data, 0, nRead);
+            byte[] message_data = buffer.toByteArray();
+            String answer = new String(message_data);
+            if(answer.equals("ERROR ID")) {
+                System.out.println("Peer with id " + this.id + " already exists.");
+                return;
+            } else if(answer.equals("ACK")) {
+                System.out.println("Successfully joined the system.");
+            }
+        } catch(Exception ex) {
+            System.out.println("Error connecting to server.");
+            ex.printStackTrace();
+            return;
+        }
         
         //Set up RMI
         try {

@@ -18,8 +18,6 @@ public class BackupThread implements Runnable {
     public void run() {
         SaveFile file = new SaveFile(file_name, rep_degree);
         this.owner.get_files().put(file_name, file);
-        //TEST, to use to restore a file:
-        //SaveFile write = new SaveFile(file_name, file.get_body());
         Message to_manager = new Message("BACKUP", this.owner.get_id(), null, this.rep_degree, null, null, -1, null);
         Message manager_answer = this.backup_request_manager(to_manager, this.owner.get_manager_port(), 
             this.owner.get_manager_address());
@@ -67,6 +65,14 @@ public class BackupThread implements Runnable {
             if(answer.equals("READY")) {
                 for(int i = 0; i < file.get_body().size(); i++) {
                     socket.getOutputStream().write(file.get_body().get(i));
+                    InputStream istream = socket.getInputStream();
+                    data = new byte[3];
+                    istream.read(data, 0, data.length);
+                    String ack = new String(data);
+                    if(!ack.equals("ACK")) {
+                        System.out.println("Error sending backup request.");
+                        break;
+                    }
                 }
             }
             System.out.println("Sent backup request to peer.");

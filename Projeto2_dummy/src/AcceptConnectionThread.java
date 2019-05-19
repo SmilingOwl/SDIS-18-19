@@ -20,7 +20,7 @@ public class AcceptConnectionThread implements Runnable {
     public void run() {
         try {
             System.out.println("\nConnection accepted");
-            byte[] data = new byte[10000000];
+            byte[] data = new byte[16000];
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             InputStream stream = this.socket.getInputStream();
             int nRead = stream.read(data, 0, data.length);
@@ -37,6 +37,7 @@ public class AcceptConnectionThread implements Runnable {
             }
         } catch(Exception ex) {
             System.out.println("Error receiving message.");
+            ex.printStackTrace();
         }
     }
 }

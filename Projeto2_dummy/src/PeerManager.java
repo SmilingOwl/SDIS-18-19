@@ -20,7 +20,7 @@ public class PeerManager {
         }
         this.peers = new ConcurrentHashMap<Integer, PeerInfo>();
         this.files = new ConcurrentHashMap<String, ArrayList<Integer>>();
-        this.thread_executor = new ScheduledThreadPoolExecutor(300);
+        this.thread_executor = new ScheduledThreadPoolExecutor(3000);
 
         this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, this));
     }

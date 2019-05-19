@@ -31,12 +31,19 @@ public class ManagerMessageHandler implements Runnable {
         int peer_id = this.message.get_peer_id();
         int port = this.message.get_port();
         String address = this.message.get_address();
+        String answer = "ACK";
         if(this.owner.get_peers().get(peer_id) != null) {
+            answer = "ERROR ID";
             System.out.println("Error: Peer with id " + peer_id + " already exists in the system.");
         } else {
             PeerInfo peer_info = new PeerInfo(peer_id, port, address);
             this.owner.get_peers().put(peer_id, peer_info);
             System.out.println("Peer " + peer_id + " joined the system.");
+        }
+        try {
+            this.socket.getOutputStream().write(answer.getBytes());
+        } catch (Exception ex) {
+            System.out.println("Error communicating with peer.");
         }
     }
 

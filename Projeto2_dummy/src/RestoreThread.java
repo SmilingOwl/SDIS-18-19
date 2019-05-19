@@ -65,6 +65,7 @@ public class RestoreThread implements Runnable {
             buffer.write(data, 0, nRead);
             byte[] message_data = buffer.toByteArray();
             Message answer = new Message(message_data);
+            String ack_msg = "ACK";
             
             /******** receive file ********/
             if(answer.get_type().equals("FILE")) {
@@ -76,6 +77,7 @@ public class RestoreThread implements Runnable {
                     buffer.write(data, 0, nRead);
                     message_data = buffer.toByteArray();
                     body.add(message_data);
+                    socket.getOutputStream().write(ack_msg.getBytes());
                     if(n == num_chunks - 1)
                         break;
                     nRead = stream.read(data, 0, data.length);

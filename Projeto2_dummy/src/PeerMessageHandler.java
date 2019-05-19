@@ -29,6 +29,7 @@ public class PeerMessageHandler implements Runnable {
         int num_chunks = this.message.get_rep_degree();
         ArrayList<byte[]> body = new ArrayList<byte[]>();
         String ready_msg = "READY";
+        String ack_msg = "ACK";
         int n = 0;
         try {
             socket.getOutputStream().write(ready_msg.getBytes());
@@ -40,6 +41,7 @@ public class PeerMessageHandler implements Runnable {
                 buffer.write(data, 0, nRead);
                 byte[] message_data = buffer.toByteArray();
                 body.add(message_data);
+                socket.getOutputStream().write(ack_msg.getBytes());
                 if(n == num_chunks-1)
                     break;
                 nRead = stream.read(data, 0, data.length);
@@ -65,6 +67,14 @@ public class PeerMessageHandler implements Runnable {
             System.out.println("Sent file message");
             for(int i = 0; i < file_to_send.get_body().size(); i++) {
                 socket.getOutputStream().write(file_to_send.get_body().get(i));
+                InputStream istream = socket.getInputStream();
+                byte[] data = new byte[3];
+                istream.read(data, 0, data.length);
+                String ack = new String(data);
+                if(!ack.equals("ACK")) {
+                    System.out.println("Error sending file on restore protocol.");
+                    break;
+                }
             }
         } catch(Exception ex) {
             System.out.println("Error writing to socket.");
