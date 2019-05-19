@@ -79,12 +79,12 @@ class Message {
 
        /** DELETE Protocol:
               --DELETE <file_id> 
-              --DELETED 
+              --DELETED <file_id>
         */
        }else if(this.type.equals("DELETE")){
            this.file_id = message_parts[1];
 
-       }else if(this.type.equals("M_DELETE")){
+       }else if(this.type.equals("DELETED")){
            this.file_id = message_parts[1];
        }
 
@@ -121,7 +121,7 @@ class Message {
             message= this.type + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
         } else if(this.type.equals("DELETE")){
             message= this.type + " " + this.file_id + " \r\n\r\n";
-        } else if(this.type.equals("M_DELETE")){
+        } else if(this.type.equals("DELETED")){
             message= this.type + " " + this.file_id + " \r\n\r\n";
         } else return null;
 

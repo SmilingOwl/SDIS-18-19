@@ -64,6 +64,7 @@ public class BackupThread implements Runnable {
             buffer.write(data, 0, nRead);
             byte[] message_data = buffer.toByteArray();
             String answer = new String(message_data);
+           
             if(answer.equals("READY")) {
                 for(int i = 0; i < file.get_body().size(); i++) {
                     socket.getOutputStream().write(file.get_body().get(i));

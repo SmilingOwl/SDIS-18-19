@@ -16,16 +16,20 @@ public class DeleteThread implements Runnable {
     public void run() {
         String file_id = SaveFile.generate_id(file_name);
 
-        Message to_manager = new Message("DELETE", this.owner.get_id(), file_id, -1, null, null, -1, null);
+        Message peer_to_manager = new Message("DELETE", this.owner.get_id(), file_id, -1, null, null, -1, null);
         
-        Message manager_answer = this.delete_request_manager(to_manager, this.owner.get_manager_port(), 
+        Message manager_answer = this.delete_request_manager(peer_to_manager, this.owner.get_manager_port(), 
             this.owner.get_manager_address());
 
+        //AVAILABLE MESSAGE
         ArrayList<PeerInfo> address_list = manager_answer.get_peers();
-       
-        Message to_peer = new Message("DELETE", this.owner.get_id(), file_id, -1, null, null, -1, null);
-       
-        this.delete_request(to_peer, address_list);
+        
+        //sending delete messager to all available peers
+        for(int i = 0; i < address_list.size(); i++) {
+            Message to_peers = new Message("DELETE", this.owner.get_id(), file_id, -1, null, null, -1, null);
+            this.delete_request(to_peers, address_list);
+        }
+        
     }
 
     public Message delete_request_manager(Message message, int port, String address) {
@@ -34,6 +38,7 @@ public class DeleteThread implements Runnable {
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
             socket.getOutputStream().write(message.build());
+            
             System.out.println("Sent delete request to manager.");
             byte[] data = new byte[16000];
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -41,6 +46,7 @@ public class DeleteThread implements Runnable {
             int nRead = stream.read(data, 0, data.length);
             buffer.write(data, 0, nRead);
             byte[] message_data = buffer.toByteArray();
+           
             received_message = new Message(message_data);
             socket.close();
         } catch(Exception ex) {
@@ -57,11 +63,19 @@ public class DeleteThread implements Runnable {
             /******** create socket ********/
             SSLSocketFactory socketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
-            
-            /******** write delete message ********/
             socket.getOutputStream().write(message.build());
+            byte[] data = new byte[16000];
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            InputStream stream = socket.getInputStream();
+            int nRead = stream.read(data, 0, data.length);
+            buffer.write(data, 0, nRead);
+            byte[] message_data = buffer.toByteArray();
+            String answer = new String(message_data);
 
-            
+            if(answer.equals("DELETED")){
+                // Apago o file aqui? 
+            }
+
             socket.close();
             System.out.println("Sent delete request to peer.");
         } catch(Exception ex) {
