@@ -118,16 +118,7 @@ public class Peer implements RemoteInterface {
     }
     
     public String delete_file(String file_name) throws RemoteException {
-        System.out.println("Initiated delete of a file.");
-
-        SaveFile file = this.files.get(file_name);       
-        if(file == null)
-            return "File not found.";
-        String file_id = file.get_id();
-
-        //TODO - send DELETE message to PeerManager (new thread for that)
-
-        System.out.println("Returned from delete of a file.");
+        this.thread_executor.execute(new DeleteThread(file_name, this));
         return "File deleted successfully.";
     }
     
