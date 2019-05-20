@@ -12,7 +12,6 @@ class Message {
     private ArrayList<PeerInfo> peers;
     private ArrayList<Integer> peer_ids;
     
-
     Message(String type, int peer_id, String file_id, int rep_degree, byte[] body, String address, int port,
         ArrayList<PeerInfo> peers) {
         this.type = type;
@@ -39,6 +38,10 @@ class Message {
         this.peers = new ArrayList<PeerInfo>();
 
         if(this.type.equals("JOIN")) {
+            this.peer_id = Integer.parseInt(message_parts[1]);
+            this.address = message_parts[2];
+            this.port = Integer.parseInt(message_parts[3]);
+        } else if(this.type.equals("JOIN_M")) {
             this.peer_id = Integer.parseInt(message_parts[1]);
             this.address = message_parts[2];
             this.port = Integer.parseInt(message_parts[3]);
@@ -147,6 +150,9 @@ class Message {
         byte[] m_body = null;
 
         if (this.type.equals("JOIN")) {
+            message = this.type + " " + this.peer_id +
+            " " + this.address + " " + this.port + " \r\n\r\n";        
+        } else if (this.type.equals("JOIN_M")) {
             message = this.type + " " + this.peer_id +
             " " + this.address + " " + this.port + " \r\n\r\n";        
         } else if(this.type.equals("BACKUP")){

@@ -16,7 +16,9 @@ public class ManagerMessageHandler implements Runnable {
 
     public void run() {
         if (this.message.get_type().equals("JOIN")) {
-            this.peer_join();
+            this.peer_join(false);
+        } else if (this.message.get_type().equals("JOIN_M")) {
+            this.peer_join(true);
         } else if (this.message.get_type().equals("BACKUP")) {
             this.backup_request();
         } else if (this.message.get_type().equals("STORED")) {
@@ -41,7 +43,7 @@ public class ManagerMessageHandler implements Runnable {
     }
 
     /*************** Message Handler Functions ***************/
-    public void peer_join() {
+    public void peer_join(boolean sent_by_manager) {
         int peer_id = this.message.get_peer_id();
         int port = this.message.get_port();
         String address = this.message.get_address();
@@ -58,6 +60,14 @@ public class ManagerMessageHandler implements Runnable {
             this.socket.getOutputStream().write(answer.getBytes());
         } catch (Exception ex) {
             System.out.println("Error communicating with peer.");
+        }
+        if(!sent_by_manager) {
+            for (int i = 0; i < this.owner.get_managers().size(); i++) {
+                this.message.set_type("JOIN_M");
+                SendMessage redirect_message = new SendMessage(this.owner.get_managers().get(i).get_address(),
+                    this.owner.get_managers().get(i).get_port(), this.message, this.owner.get_context().getSocketFactory());
+                redirect_message.run();
+            }
         }
     }
 
