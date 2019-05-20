@@ -1,4 +1,3 @@
-import java.net.*;
 import java.io.*;
 import java.util.*;
 import javax.net.ssl.SSLSocket;
@@ -79,7 +78,7 @@ public class BackupThread implements Runnable {
             System.out.println("Sent backup request to peer.");
             socket.close();
         } catch(Exception ex) {
-            System.out.println("Error connecting to peer.");
+            System.out.println("Error sending backup request to peer.");
         }
     }
 }

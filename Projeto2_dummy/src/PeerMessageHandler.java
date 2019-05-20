@@ -1,5 +1,4 @@
 import javax.net.ssl.SSLSocket;
-import java.net.*;
 import java.io.*;
 import java.util.*;
 
@@ -12,6 +11,7 @@ public class PeerMessageHandler implements Runnable {
         this.owner = owner;
         this.message = new Message(msg);
         this.socket = socket;
+        System.out.println("Received message: " + new String(msg));
     }
 
     public void run() {
@@ -53,7 +53,7 @@ public class PeerMessageHandler implements Runnable {
         } catch (Exception ex) {
             System.out.println("Error writing to socket.");
         }
-        SaveFile write = new SaveFile(this.owner.get_id(), file_id, "backup", body);
+        new SaveFile(this.owner.get_id(), file_id, "backup", body);
         Message message = new Message("STORED", this.owner.get_id(), file_id, -1, null, null, -1, null);
         SendMessage send_stored = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(),
                 message, this.owner.get_context().getSocketFactory());

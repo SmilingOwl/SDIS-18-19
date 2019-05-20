@@ -10,8 +10,6 @@ import java.nio.channels.CompletionHandler;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.nio.file.Files;
-import java.io.FileInputStream;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.Future;
@@ -22,7 +20,6 @@ public class SaveFile {
     private int rep_degree;
     private String file_name;
     private ArrayList<byte[]> body;
-    private Peer peer;
 
     SaveFile(String file_path, int rep_degree) {
         this.rep_degree = rep_degree;

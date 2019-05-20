@@ -1,8 +1,5 @@
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import javax.net.ssl.SSLSocket;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -26,7 +23,6 @@ public class AcceptConnectionThread implements Runnable {
             int nRead = stream.read(data, 0, data.length);
             buffer.write(data, 0, nRead);
             byte[] message_data = buffer.toByteArray();
-            System.out.println("Received message.");
             
             if(this.owner instanceof PeerManager) {
                 PeerManager peer_manager = (PeerManager) this.owner;

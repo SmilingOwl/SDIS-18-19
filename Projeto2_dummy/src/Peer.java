@@ -13,7 +13,6 @@ import java.net.InetAddress;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
-import javax.security.cert.X509Certificate;
 import java.security.KeyStore;
 
 public class Peer implements RemoteInterface {
@@ -84,6 +83,7 @@ public class Peer implements RemoteInterface {
         }
 
         this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, this));
+        this.thread_executor.execute(new SendActiveMessage(this));
     }
 
     public boolean set_context() {

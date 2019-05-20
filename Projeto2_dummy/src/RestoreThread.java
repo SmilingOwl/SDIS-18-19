@@ -1,4 +1,3 @@
-import java.net.*;
 import java.io.*;
 import java.util.*;
 import javax.net.ssl.SSLSocket;
@@ -6,7 +5,6 @@ import javax.net.ssl.SSLSocketFactory;
 
 public class RestoreThread implements Runnable {
     private String file_name;
-    private int rep_degree;
     private Peer owner;
 
     public RestoreThread(String file_name, Peer owner) {
@@ -48,47 +46,54 @@ public class RestoreThread implements Runnable {
     public void restore_request(Message message, ArrayList<PeerInfo> address_list) {
         String address = address_list.get(0).get_address();
         int port = address_list.get(0).get_port();
-        ArrayList<byte[]> body = new ArrayList<byte[]>();
-        try {
-            /******** create socket ********/
-            SSLSocketFactory socketfactory = this.owner.get_context().getSocketFactory();
-            SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
-            
-            /******** write restore message ********/
-            socket.getOutputStream().write(message.build());
+        for(int i = 0; i < address_list.size(); i++) {
+            ArrayList<byte[]> body = new ArrayList<byte[]>();
+            try {
+                /******** create socket ********/
+                SSLSocketFactory socketfactory = this.owner.get_context().getSocketFactory();
+                SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
+                
+                /******** write restore message ********/
+                socket.getOutputStream().write(message.build());
 
-            /******** receive answer ********/
-            byte[] data = new byte[16000];
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            InputStream stream = socket.getInputStream();
-            int nRead = stream.read(data, 0, data.length);
-            buffer.write(data, 0, nRead);
-            byte[] message_data = buffer.toByteArray();
-            Message answer = new Message(message_data);
-            String ack_msg = "ACK";
-            
-            /******** receive file ********/
-            if(answer.get_type().equals("FILE")) {
-                int num_chunks = answer.get_rep_degree();
-                int n = 0;
-                nRead = stream.read(data, 0, data.length);
-                while(nRead > 0) {
-                    buffer = new ByteArrayOutputStream();
-                    buffer.write(data, 0, nRead);
-                    message_data = buffer.toByteArray();
-                    body.add(message_data);
-                    socket.getOutputStream().write(ack_msg.getBytes());
-                    if(n == num_chunks - 1)
-                        break;
+                /******** receive answer ********/
+                byte[] data = new byte[16000];
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                InputStream stream = socket.getInputStream();
+                int nRead = stream.read(data, 0, data.length);
+                buffer.write(data, 0, nRead);
+                byte[] message_data = buffer.toByteArray();
+                Message answer = new Message(message_data);
+                String ack_msg = "ACK";
+                
+                /******** receive file ********/
+                if(answer.get_type().equals("FILE")) {
+                    int num_chunks = answer.get_rep_degree();
+                    int n = 0;
                     nRead = stream.read(data, 0, data.length);
-                    n++;
+                    while(nRead > 0) {
+                        buffer = new ByteArrayOutputStream();
+                        buffer.write(data, 0, nRead);
+                        message_data = buffer.toByteArray();
+                        body.add(message_data);
+                        socket.getOutputStream().write(ack_msg.getBytes());
+                        if(n == num_chunks - 1)
+                            break;
+                        nRead = stream.read(data, 0, data.length);
+                        n++;
+                    }
                 }
+                socket.close();
+                System.out.println("Sent restore request to peer.");
+                
+                new SaveFile(this.owner.get_id(), this.file_name, "restore", body);
+                break;
+            } catch(Exception ex) {
+                System.out.print("Error sending restore request to peer.");
+                if(i < address_list.size()-1)
+                    System.out.println(" Trying another one.");
+                else System.out.println();
             }
-            socket.close();
-            System.out.println("Sent restore request to peer.");
-        } catch(Exception ex) {
-            System.out.println("Error connecting to peer.");
         }
-        SaveFile write = new SaveFile(this.owner.get_id(), this.file_name, "restore", body);
     }
 }

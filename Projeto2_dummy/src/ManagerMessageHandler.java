@@ -1,7 +1,6 @@
 import javax.net.ssl.SSLSocket;
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.io.InputStream;
 
 public class ManagerMessageHandler implements Runnable {
     private Message message;
@@ -12,6 +11,7 @@ public class ManagerMessageHandler implements Runnable {
         this.owner = owner;
         this.message = new Message(msg);
         this.socket = socket;
+        System.out.println("Received message: " + new String(msg));
     }
 
     public void run() {
@@ -20,13 +20,23 @@ public class ManagerMessageHandler implements Runnable {
         } else if (this.message.get_type().equals("BACKUP")) {
             this.backup_request();
         } else if (this.message.get_type().equals("STORED")) {
-            this.stored_message();
+            this.stored_message(false);
+        } else if (this.message.get_type().equals("STORED_M")) {
+            this.stored_message(true);
         } else if (this.message.get_type().equals("RESTORE")) {
             this.restore_request();
         } else if (this.message.get_type().equals("DELETE")) {
             this.delete_request();
         } else if (this.message.get_type().equals("DELETED")) {
             this.deleted_message();
+        } else if (this.message.get_type().equals("MANAGER_ADD")) {
+            this.manager_add();
+        } else if (this.message.get_type().equals("MANAGER_JOIN")) {
+            this.manager_join();
+        } else if (this.message.get_type().equals("ACTIVE")) {
+            this.peer_active(false);
+        } else if (this.message.get_type().equals("ACTIVE_M")) {
+            this.peer_active(true);
         }
     }
 
@@ -65,10 +75,12 @@ public class ManagerMessageHandler implements Runnable {
         }
     }
 
-    private void stored_message() {
+    private void stored_message(boolean sent_by_manager) {
         int peer_id = message.get_peer_id();
         String file_id = message.get_file_id();
         ArrayList<Integer> peers_backing_up_file = this.owner.get_files().get(file_id);
+        PeerInfo peer_info = this.owner.get_peers().get(peer_id);
+        peer_info.increase_count_files();
         if(peers_backing_up_file == null) {
             ArrayList<Integer> new_peers = new ArrayList<Integer>();
             new_peers.add(peer_id);
@@ -85,6 +97,15 @@ public class ManagerMessageHandler implements Runnable {
                 System.out.println(this.owner.get_files().get(key).get(i) + " ; ");
             }
             System.out.println();
+        }
+
+        if(!sent_by_manager){
+            for (int i = 0; i < this.owner.get_managers().size(); i++) {
+                this.message.set_type("STORED_M");
+                SendMessage redirect_message = new SendMessage(this.owner.get_managers().get(i).get_address(),
+                    this.owner.get_managers().get(i).get_port(), this.message, this.owner.get_context().getSocketFactory());
+                    redirect_message.run();
+            }
         }
     }
 
@@ -127,6 +148,77 @@ public class ManagerMessageHandler implements Runnable {
         //if arraylist corresponding to the file_id in the hashmap is empty, delete file_id from hashmap.
     }
 
+    private void manager_add() {
+        String address = message.get_address();
+        int port = message.get_port();
+        PeerManagerInfo new_manager = new PeerManagerInfo(port, address);
+        this.owner.get_managers().add(new_manager);
+    }
+
+    private void manager_join() {
+        String address = message.get_address();
+        int port = message.get_port();
+
+        Message peer_info = new Message("PEER_INFO", -1, null, this.owner.get_peers().size(), null, null, -1, null);
+        try {
+            this.socket.getOutputStream().write(peer_info.build());
+            for(Integer peer_id : this.owner.get_peers().keySet()) {
+                PeerInfo peer = this.owner.get_peers().get(peer_id);
+                Message peer_msg = new Message("PEER", peer_id, null, peer.get_count_files(), null, peer.get_address(), peer.get_port(), null);
+                this.socket.getOutputStream().write(peer_msg.build());
+                InputStream istream = socket.getInputStream();
+                byte[] data = new byte[3];
+                istream.read(data, 0, data.length);
+                String ack = new String(data);
+                if(!ack.equals("ACK")) {
+                    System.out.println("Error sending peer info answering manager join request.");
+                    break;
+                }
+            }
+            Message file_info = new Message("FILE_INFO", -1, null, this.owner.get_files().size(), null, null, -1, null);
+            this.socket.getOutputStream().write(file_info.build());
+            for(String file_id : this.owner.get_files().keySet()) {
+                Message file_msg = new Message("FILE_P", file_id, this.owner.get_files().get(file_id));
+                this.socket.getOutputStream().write(file_msg.build());
+                InputStream istream = socket.getInputStream();
+                byte[] data = new byte[3];
+                istream.read(data, 0, data.length);
+                String ack = new String(data);
+                if(!ack.equals("ACK")) {
+                    System.out.println("Error sending peer info answering manager join request.");
+                    break;
+                }
+            }
+            ArrayList<PeerInfo> managers = new ArrayList<PeerInfo>();
+            for(int i = 0; i < this.owner.get_managers().size(); i++) {
+                PeerInfo manager_info = new PeerInfo(-1, this.owner.get_managers().get(i).get_port(), 
+                    this.owner.get_managers().get(i).get_address());
+                managers.add(manager_info);
+            }
+            Message manager_info = new Message("MANAGER_INFO", -1, null, -1, null, null, -1, managers);
+            this.socket.getOutputStream().write(manager_info.build());
+        } catch (Exception ex) {
+            System.out.println("Error sending manager info messages.");
+            ex.printStackTrace();
+        }
+        PeerManagerInfo new_manager = new PeerManagerInfo(port, address);
+        this.owner.get_managers().add(new_manager);
+    }
+
+    public void peer_active(boolean sent_by_manager) {
+        int peer_id = this.message.get_peer_id();
+        PeerInfo peer = this.owner.get_peers().get(peer_id);
+        peer.set_time(System.currentTimeMillis());
+        if(!sent_by_manager){
+            for (int i = 0; i < this.owner.get_managers().size(); i++) {
+                this.message.set_type("ACTIVE_M");
+                SendMessage redirect_message = new SendMessage(this.owner.get_managers().get(i).get_address(),
+                    this.owner.get_managers().get(i).get_port(), this.message, this.owner.get_context().getSocketFactory());
+                    redirect_message.run();
+            }
+        }
+    }
+
     /*************** Auxiliary Functions ***************/
     private ArrayList<PeerInfo> get_peers_with_fewer_files(int rep_degree, int peer_id) {
         ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
@@ -142,6 +234,7 @@ public class ManagerMessageHandler implements Runnable {
                 if(available_peer.get_id() != peer_id && !peers.contains(available_peer)) {
                     if(available_peer.get_count_files() < min) {
                         min_peer = available_peer;
+                        min = available_peer.get_count_files();
                     }
                 }
             }

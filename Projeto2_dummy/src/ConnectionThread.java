@@ -6,7 +6,6 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
-import javax.security.cert.X509Certificate;
 import java.security.KeyStore;
 
 public class ConnectionThread implements Runnable {
