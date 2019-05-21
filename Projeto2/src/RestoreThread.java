@@ -44,9 +44,9 @@ public class RestoreThread implements Runnable {
     }
 
     public void restore_request(Message message, ArrayList<PeerInfo> address_list) {
-        String address = address_list.get(0).get_address();
-        int port = address_list.get(0).get_port();
         for(int i = 0; i < address_list.size(); i++) {
+            String address = address_list.get(i).get_address();
+            int port = address_list.get(i).get_port();
             ArrayList<byte[]> body = new ArrayList<byte[]>();
             try {
                 /******** create socket ********/
@@ -82,6 +82,9 @@ public class RestoreThread implements Runnable {
                         nRead = stream.read(data, 0, data.length);
                         n++;
                     }
+                } else {
+                    socket.close();
+                    continue;
                 }
                 socket.close();
                 System.out.println("Sent restore request to peer.");

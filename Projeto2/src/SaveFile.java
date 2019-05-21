@@ -20,10 +20,11 @@ public class SaveFile {
     private int rep_degree;
     private String file_name;
     private ArrayList<byte[]> body;
+    private boolean error = false;
 
     SaveFile(String file_path, int rep_degree) {
         this.rep_degree = rep_degree;
-        String unhashed_id = file_path; //ask number id to identify file, to allow multiple files with the same name in the system TODO
+        String unhashed_id = file_path;
         this.id = SaveFile.generate_id(unhashed_id);
         body = new ArrayList<byte[]>();
         
@@ -77,6 +78,10 @@ public class SaveFile {
 
     public ArrayList<byte[]> get_body(){
         return this.body;
+    }
+
+    public boolean get_error() {
+        return this.error;
     }
 
     /******************** Others *********************/
@@ -170,6 +175,7 @@ public class SaveFile {
             channel.close();
         } catch(Exception ex) {
             System.out.println("Error reading from file.");
+            error = true;
         }
     }
 }

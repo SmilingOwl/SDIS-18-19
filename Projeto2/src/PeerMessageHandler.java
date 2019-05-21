@@ -67,6 +67,11 @@ public class PeerMessageHandler implements Runnable {
         Message file_message = new Message("FILE", this.owner.get_id(), file_id, file_to_send.get_body().size(), null,
                 null, -1, null);
         try {
+            if(file_to_send.get_error()) {
+                String error_message = "ERR";
+                socket.getOutputStream().write(error_message.getBytes());
+                return;
+            }
             socket.getOutputStream().write(file_message.build());
             System.out.println("Sent file message");
             for (int i = 0; i < file_to_send.get_body().size(); i++) {

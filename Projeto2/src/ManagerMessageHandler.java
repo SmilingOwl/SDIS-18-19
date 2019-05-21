@@ -96,19 +96,12 @@ public class ManagerMessageHandler implements Runnable {
             new_peers.add(peer_id);
             this.owner.get_files().put(file_id, new_peers);
         } else {
-            peers_backing_up_file.add(peer_id);
+            if(!peers_backing_up_file.contains(peer_id))
+                peers_backing_up_file.add(peer_id);
         }
         
         System.out.println("\nPeer " + peer_id + " is backing file with id " + file_id);
-        //DEBUG TODO delete
-        for(String key : this.owner.get_files().keySet()) {
-            System.out.print("key - ");
-            for(int i = 0; i < this.owner.get_files().get(key).size(); i++) {
-                System.out.println(this.owner.get_files().get(key).get(i) + " ; ");
-            }
-            System.out.println();
-        }
-
+        
         if(!sent_by_manager){
             for (int i = 0; i < this.owner.get_managers().size(); i++) {
                 this.message.set_type("STORED_M");

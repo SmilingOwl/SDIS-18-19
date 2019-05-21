@@ -9,6 +9,7 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.FileInputStream;
+import java.io.File;
 import java.net.InetAddress;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.KeyManagerFactory;
@@ -84,6 +85,8 @@ public class Peer implements RemoteInterface {
 
         this.thread_executor.execute(new ConnectionThread(this.port, this.thread_executor, this));
         this.thread_executor.execute(new SendActiveMessage(this));
+
+        this.check_backed_up_files();
     }
 
     public boolean set_context() {
@@ -105,6 +108,20 @@ public class Peer implements RemoteInterface {
             return true;
         }
         return false;
+    }
+
+    public void check_backed_up_files() {
+        File backup_dir = new File("peer" + this.id + "/backup");
+        if(backup_dir.exists()) {
+            File[] backed_up_files = backup_dir.listFiles(); 
+            for (int i = 0; i < backed_up_files.length; i++) {
+                String file_id = backed_up_files[i].getName();
+                Message message = new Message("STORED", this.get_id(), file_id, -1, null, null, -1, null);
+                SendMessage send_stored = new SendMessage(this.get_manager_address(), this.get_manager_port(),
+                    message, this.get_context().getSocketFactory());
+                send_stored.run();
+            }
+        }
     }
 
     /************************** Getters **************************/
