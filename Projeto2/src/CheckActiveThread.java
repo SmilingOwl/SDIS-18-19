@@ -11,7 +11,7 @@ public class CheckActiveThread implements Runnable {
         while (true) {
             for(Integer peer_id : this.owner.get_peers().keySet()) {
                 long time = System.currentTimeMillis();
-                if(time - this.owner.get_peers().get(peer_id).get_time() > 120000) {
+                if(time - this.owner.get_peers().get(peer_id).get_time() > 90000) {
                     System.out.println("Deleting inactive peer: " + peer_id);
                     this.owner.get_peers().remove(peer_id);
                     for(String file_id : this.owner.get_files().keySet()) {
