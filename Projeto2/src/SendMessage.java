@@ -21,7 +21,6 @@ public class SendMessage {
             socket.getOutputStream().write(to_send);
         } catch(Exception ex) {
             System.out.println("Error connecting to server.");
-            ex.printStackTrace();
         }
 
     }

@@ -48,27 +48,39 @@ public class ManagerMessageHandler implements Runnable {
         int peer_id = this.message.get_peer_id();
         int port = this.message.get_port();
         String address = this.message.get_address();
-        String answer = "ACK";
-        if(this.owner.get_peers().get(peer_id) != null) {
-            answer = "ERROR ID";
-            System.out.println("Error: Peer with id " + peer_id + " already exists in the system.");
-        } else {
-            PeerInfo peer_info = new PeerInfo(peer_id, port, address);
-            this.owner.get_peers().put(peer_id, peer_info);
-            System.out.println("Peer " + peer_id + " joined the system.");
-        }
-        try {
-            this.socket.getOutputStream().write(answer.getBytes());
-        } catch (Exception ex) {
-            System.out.println("Error communicating with peer.");
-        }
+        
         if(!sent_by_manager) {
+            try {
+                if(this.owner.get_peers().get(peer_id) != null) {
+                    String answer = "ERROR ID";
+                    System.out.println("Error: Peer with id " + peer_id + " already exists in the system.");
+                    this.socket.getOutputStream().write(answer.getBytes());
+                } else {
+                    PeerInfo peer_info = new PeerInfo(peer_id, port, address);
+                    this.owner.get_peers().put(peer_id, peer_info);
+                    System.out.println("Peer " + peer_id + " joined the system.");
+                    ArrayList<PeerInfo> managers = new ArrayList<PeerInfo>();
+                    for(int i = 0; i < this.owner.get_managers().size(); i++) {
+                        PeerInfo manager_info = new PeerInfo(-1, this.owner.get_managers().get(i).get_port(), 
+                            this.owner.get_managers().get(i).get_address());
+                        managers.add(manager_info);
+                    }
+                    Message manager_info = new Message("MANAGER_INFO", -1, null, -1, null, null, -1, managers);
+                    this.socket.getOutputStream().write(manager_info.build());
+                }
+            } catch (Exception ex) {
+                System.out.println("Error communicating with peer.");
+            }
             for (int i = 0; i < this.owner.get_managers().size(); i++) {
                 this.message.set_type("JOIN_M");
                 SendMessage redirect_message = new SendMessage(this.owner.get_managers().get(i).get_address(),
                     this.owner.get_managers().get(i).get_port(), this.message, this.owner.get_context().getSocketFactory());
                 redirect_message.run();
             }
+        } else {
+            PeerInfo peer_info = new PeerInfo(peer_id, port, address);
+            this.owner.get_peers().put(peer_id, peer_info);
+            System.out.println("Peer " + peer_id + " joined the system.");
         }
     }
 
@@ -216,7 +228,6 @@ public class ManagerMessageHandler implements Runnable {
             this.socket.getOutputStream().write(manager_info.build());
         } catch (Exception ex) {
             System.out.println("Error sending manager info messages.");
-            ex.printStackTrace();
         }
         PeerManagerInfo new_manager = new PeerManagerInfo(port, address);
         this.owner.get_managers().add(new_manager);

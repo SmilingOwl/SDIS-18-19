@@ -64,6 +64,11 @@ public class PeerManager {
                 warn_managers, this.context.getSocketFactory());
                 send_msg.run();
         }
+        for(Integer peer_id : this.peers.keySet()) {
+            SendMessage send_msg = new SendMessage(this.peers.get(peer_id).get_address(), this.peers.get(peer_id).get_port(), 
+                warn_managers, this.context.getSocketFactory());
+                send_msg.run();
+        }
     }
 
     public int get_port() {
@@ -211,7 +216,6 @@ public class PeerManager {
             socket.close();
         } catch(Exception ex) {
             System.out.println("Error receiving info from server.");
-            ex.printStackTrace();
             return false;
         }
         return true;

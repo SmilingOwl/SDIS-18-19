@@ -129,9 +129,9 @@ public class SaveFile {
                 @Override
                 public void failed(Throwable exc, ByteBuffer attachment) {
                     System.out.println("Error writing to file.");
-                    exc.printStackTrace();
                 }
             }); 
+            file_channel.close();
         } catch (Exception ex) {
             System.out.println("Error writing to file.");
         }

@@ -33,7 +33,6 @@ public class AcceptConnectionThread implements Runnable {
             }
         } catch(Exception ex) {
             System.out.println("Error receiving message.");
-            ex.printStackTrace();
         }
     }
 }

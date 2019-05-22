@@ -21,6 +21,8 @@ public class PeerMessageHandler implements Runnable {
             this.restore_request();
         } else if(this.message.get_type().equals("DELETE")){
             this.delete_request();
+        } else if(this.message.get_type().equals("MANAGER_ADD")){
+            this.manager_add();
         }
     }
 
@@ -55,9 +57,22 @@ public class PeerMessageHandler implements Runnable {
         }
         new SaveFile(this.owner.get_id(), file_id, "backup", body);
         Message message = new Message("STORED", this.owner.get_id(), file_id, -1, null, null, -1, null);
-        SendMessage send_stored = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(),
-                message, this.owner.get_context().getSocketFactory());
-        send_stored.run();
+        int i = 0;
+        while(i < this.owner.get_managers().size()){
+            try {
+                SSLSocket socket = (SSLSocket) this.owner.get_context().getSocketFactory().createSocket(this.owner.get_manager_address(), 
+                    this.owner.get_manager_port());
+                socket.getOutputStream().write(message.build());
+                break;
+            } catch(Exception ex) {
+                System.out.println("Error connecting to server. Trying another one.");
+                this.owner.switch_manager();
+                i++;
+            }
+        }
+        if(i == this.owner.get_managers().size()) {
+            System.out.println("Couldn't connect to any server.");
+        }
     }
 
     public void restore_request() {
@@ -96,24 +111,41 @@ public class PeerMessageHandler implements Runnable {
                 
         try {
             this.owner.get_files().remove(file_id);
-            System.out.println("deleted file");
-
         } catch (Exception ex) {
             System.out.println("Error writing to socket.");
-
         }
         Message message = new Message("DELETED", this.owner.get_id(), file_id, -1, null, null, -1, null);
-        SendMessage send_deleted = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(), message,
-            this.owner.get_context().getSocketFactory());
-        send_deleted.run();
+        int i = 0;
+        while(i < this.owner.get_managers().size()){
+            try {
+                SSLSocket socket = (SSLSocket) this.owner.get_context().getSocketFactory().createSocket(this.owner.get_manager_address(), 
+                    this.owner.get_manager_port());
+                socket.getOutputStream().write(message.build());
+                break;
+            } catch(Exception ex) {
+                System.out.println("Error connecting to server. Trying another one.");
+                this.owner.switch_manager();
+                i++;
+            }
+        }
+        if(i == this.owner.get_managers().size()) {
+            System.out.println("Couldn't connect to any server.");
+        }
 
         File file_dir = new File("peer" + this.owner.get_id() + "/backup/" + file_id);
-            if(!file_dir.exists()) {
-                System.out.println("Trying to delete file. File directory doesn't exist.");
-                return;
-            }
-            else{
-                file_dir.delete();
-            }
+        if(!file_dir.exists()) {
+            System.out.println("Trying to delete file. File directory doesn't exist.");
+            return;
+        }
+        else{
+            file_dir.delete();
+        }
+    }
+
+    private void manager_add() {
+        String address = message.get_address();
+        int port = message.get_port();
+        PeerManagerInfo new_manager = new PeerManagerInfo(port, address);
+        this.owner.get_managers().add(new_manager);
     }
 }

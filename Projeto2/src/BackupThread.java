@@ -18,8 +18,7 @@ public class BackupThread implements Runnable {
         SaveFile file = new SaveFile(file_name, rep_degree);
         this.owner.get_files().put(file_name, file);
         Message to_manager = new Message("BACKUP", this.owner.get_id(), null, this.rep_degree, null, null, -1, null);
-        Message manager_answer = this.backup_request_manager(to_manager, this.owner.get_manager_port(), 
-            this.owner.get_manager_address());
+        Message manager_answer = this.backup_request_manager(to_manager);
         ArrayList<PeerInfo> address_list = manager_answer.get_peers();
         for(int i = 0; i < address_list.size(); i++) {
             Message to_peer = new Message("P2P_BACKUP", this.owner.get_id(), file.get_id(), file.get_body().size(),
@@ -28,23 +27,33 @@ public class BackupThread implements Runnable {
         }
     }
 
-    public Message backup_request_manager(Message message, int port, String address) {
+    public Message backup_request_manager(Message message) {
         Message received_message = null;
-        try {
-            SSLSocketFactory socketfactory = this.owner.get_context().getSocketFactory();
-            SSLSocket socket = (SSLSocket) socketfactory.createSocket(address, port);
-            socket.getOutputStream().write(message.build());
-            System.out.println("Sent backup request to manager.");
-            byte[] data = new byte[16000];
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            InputStream stream = socket.getInputStream();
-            int nRead = stream.read(data, 0, data.length);
-            buffer.write(data, 0, nRead);
-            byte[] message_data = buffer.toByteArray();
-            received_message = new Message(message_data);
-            socket.close();
-        } catch(Exception ex) {
-            System.out.println("Error connecting to manager.");
+        int i = 0;
+        while(i < this.owner.get_managers().size())
+        {
+            try {
+                SSLSocketFactory socketfactory = this.owner.get_context().getSocketFactory();
+                SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.owner.get_manager_address(), this.owner.get_manager_port());
+                socket.getOutputStream().write(message.build());
+                System.out.println("Sent backup request to manager.");
+                byte[] data = new byte[16000];
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                InputStream stream = socket.getInputStream();
+                int nRead = stream.read(data, 0, data.length);
+                buffer.write(data, 0, nRead);
+                byte[] message_data = buffer.toByteArray();
+                received_message = new Message(message_data);
+                socket.close();
+                break;
+            } catch(Exception ex) {
+                System.out.println("Error connecting to manager. Trying another one.");
+                this.owner.switch_manager();
+                i++;
+            }
+        }
+        if(i == this.owner.get_managers().size()) {
+            System.out.println("Couldn't connect to any manager.");
         }
         return received_message;
     }

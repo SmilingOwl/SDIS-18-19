@@ -4,6 +4,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.ByteArrayOutputStream;
@@ -25,6 +26,8 @@ public class Peer implements RemoteInterface {
     private ConcurrentHashMap<String, SaveFile> files;
     private ScheduledThreadPoolExecutor thread_executor;
     private SSLContext context;
+    private ArrayList<PeerManagerInfo> managers;
+    private int current_manager;
 
     public Peer(int id, String remote_object_name, int port, String manager_address, int manager_port) {
         this.id = id;
@@ -32,6 +35,10 @@ public class Peer implements RemoteInterface {
         this.manager_port = manager_port;
         this.manager_address = manager_address;
         this.files = new ConcurrentHashMap<String, SaveFile>();
+        this.managers = new ArrayList<PeerManagerInfo>();
+        PeerManagerInfo manager = new PeerManagerInfo(this.manager_port, this.manager_address);
+        this.managers.add(manager);
+        this.current_manager = 0;
         this.thread_executor = new ScheduledThreadPoolExecutor(3000);
 
         try{
@@ -61,12 +68,18 @@ public class Peer implements RemoteInterface {
             if(answer.equals("ERROR ID")) {
                 System.out.println("Peer with id " + this.id + " already exists.");
                 return;
-            } else if(answer.equals("ACK")) {
+            } else {
                 System.out.println("Successfully joined the system.");
+                Message m_answer = new Message(message_data);
+                if(m_answer.get_type().equals("MANAGER_INFO")) {
+                    for(int j = 0; j < m_answer.get_peers().size(); j++) {
+                        PeerManagerInfo new_manager = new PeerManagerInfo(m_answer.get_peers().get(j).get_port(), m_answer.get_peers().get(j).get_address());
+                        this.managers.add(new_manager);
+                    }
+                }
             }
         } catch(Exception ex) {
             System.out.println("Error connecting to server.");
-            ex.printStackTrace();
             return;
         }
         
@@ -154,8 +167,21 @@ public class Peer implements RemoteInterface {
         return this.files;
     }
 
+    public ArrayList<PeerManagerInfo> get_managers() {
+        return this.managers;
+    }
+
     public SSLContext get_context() {
         return this.context;
+    }
+
+    public void switch_manager() {
+        this.current_manager++;
+        if(this.current_manager >= this.managers.size()) {
+            this.current_manager = 0;
+        }
+        this.manager_address = this.managers.get(this.current_manager).get_address();
+        this.manager_port = this.managers.get(this.current_manager).get_port();
     }
 
     /************************** Protocols functions **************************/
