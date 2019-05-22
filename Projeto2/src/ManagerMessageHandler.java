@@ -1,6 +1,7 @@
 import javax.net.ssl.SSLSocket;
 import java.util.ArrayList;
 import java.io.InputStream;
+import java.io.File;
 
 public class ManagerMessageHandler implements Runnable {
     private Message message;
@@ -147,8 +148,21 @@ public class ManagerMessageHandler implements Runnable {
     }
 
     private void deleted_message() {
-        //TODO delete peer id from files hashmap, where file_id is the one received in the message.
-        //if arraylist corresponding to the file_id in the hashmap is empty, delete file_id from hashmap.
+
+        String file_id = this.message.get_file_id();
+        int peer_id= this.message.get_peer_id();
+        
+        if(this.owner.get_files().get(file_id)!= null){
+            for(int i=0; i< this.owner.get_files().get(file_id).size(); i++){
+                if(this.owner.get_files().get(file_id).get(i) == peer_id ){
+                    this.owner.get_files().get(file_id).remove(peer_id);
+                }
+            }
+            if(this.owner.get_files().get(file_id).size() == 0){
+                this.owner.get_files().remove(file_id);
+            }
+        }
+
     }
 
     private void manager_add() {

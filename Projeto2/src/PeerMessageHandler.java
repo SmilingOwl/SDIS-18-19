@@ -106,5 +106,14 @@ public class PeerMessageHandler implements Runnable {
         SendMessage send_deleted = new SendMessage(this.owner.get_manager_address(), this.owner.get_manager_port(), message,
             this.owner.get_context().getSocketFactory());
         send_deleted.run();
+
+        File file_dir = new File("peer" + this.owner.get_id() + "/backup/" + file_id);
+            if(!file_dir.exists()) {
+                System.out.println("Trying to delete file. File directory doesn't exist.");
+                return;
+            }
+            else{
+                file_dir.delete();
+            }
     }
 }
