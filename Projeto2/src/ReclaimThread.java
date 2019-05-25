@@ -13,11 +13,12 @@ public class ReclaimThread implements Runnable {
     }
 
     public void run() {
+        this.send_initial_message();
         File backup_dir = new File("peer" + this.owner.get_id() + "/backup");
         while(this.owner.get_free_space() < 0) {
             SaveFile file = new SaveFile("peer" + this.owner.get_id() + "/backup/" + backup_dir.listFiles()[0].getName(), 1);
             String file_id = backup_dir.listFiles()[0].getName();
-            Message reclaim_message = new Message("RECLAIM", this.owner.get_id(), file_id, (int) backup_dir.listFiles()[0].length(), null, null, this.owner.get_free_space(), null); 
+            Message reclaim_message = new Message("B_RECLAIM", this.owner.get_id(), file_id, (int) backup_dir.listFiles()[0].length(), null, null, this.owner.get_free_space(), null); 
             Message manager_answer = this.reclaim_request_manager(reclaim_message);
             ArrayList<PeerInfo> address_list = manager_answer.get_peers();
             Message to_peer = new Message("P2P_BACKUP", this.owner.get_id(), file_id, file.get_body().size(),
@@ -27,6 +28,29 @@ public class ReclaimThread implements Runnable {
         }
 
         System.out.println("At the end of RECLAIM protocol, I have " + this.owner.get_free_space() + " free space to save files.");
+    }
+
+    public void send_initial_message() {
+        Message message = new Message("RECLAIM", this.owner.get_id(), null, this.owner.get_free_space(), null, null, -1, null);
+        int i = 0;
+        while(i < this.owner.get_managers().size())
+        {
+            try {
+                SSLSocketFactory socketfactory = this.owner.get_context().getSocketFactory();
+                SSLSocket socket = (SSLSocket) socketfactory.createSocket(this.owner.get_manager_address(), this.owner.get_manager_port());
+                socket.getOutputStream().write(message.build());
+                System.out.println("Sent reclaim message to manager.");
+                break;
+            } catch(Exception Ex) {
+                System.out.println("Error connecting to manager. Trying another one.");
+                this.owner.switch_manager();
+                i++;
+            }
+        }
+
+        if(i == this.owner.get_managers().size()) {
+            System.out.println("Couldn't connect to any manager.");
+        }
     }
 
     public Message reclaim_request_manager(Message message) {

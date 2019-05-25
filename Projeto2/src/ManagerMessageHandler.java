@@ -35,6 +35,10 @@ public class ManagerMessageHandler implements Runnable {
         } else if (this.message.get_type().equals("DELETED_M")) {
             this.deleted_message(true);
         } else if (this.message.get_type().equals("RECLAIM")) {
+            this.reclaim_message(false);
+        } else if (this.message.get_type().equals("RECLAIM_M")) {
+            this.reclaim_message(true);
+        } else if (this.message.get_type().equals("B_RECLAIM")) {
             this.reclaim_request();
         } else if (this.message.get_type().equals("MANAGER_ADD")) {
             this.manager_add();
@@ -196,13 +200,25 @@ public class ManagerMessageHandler implements Runnable {
         }
     }
 
+    private void reclaim_message(boolean sent_by_manager) {
+        int peer_id = this.message.get_peer_id();
+        int free_space = this.message.get_rep_degree();
+        PeerInfo peer_info = this.owner.get_peers().get(peer_id);
+        peer_info.set_free_space(free_space);
+
+        if(!sent_by_manager){
+            for (int i = 0; i < this.owner.get_managers().size(); i++) {
+                this.message.set_type("RECLAIM_M");
+                SendMessage redirect_message = new SendMessage(this.owner.get_managers().get(i).get_address(),
+                    this.owner.get_managers().get(i).get_port(), this.message, this.owner.get_context().getSocketFactory());
+                    redirect_message.run();
+            }
+        }
+    }
+
     private void reclaim_request() {
         String file_id = this.message.get_file_id();
         int occupied = this.message.get_rep_degree();
-        int free_space = this.message.get_port();
-        int peer_id = this.message.get_peer_id();
-        PeerInfo peer_info = this.owner.get_peers().get(peer_id);
-        peer_info.set_free_space(free_space);
         ArrayList<PeerInfo> peers = get_peers_without_file(file_id, occupied);
         Message message = new Message("AVAILABLE", -1, null, -1, null, null, -1, peers);
         try {

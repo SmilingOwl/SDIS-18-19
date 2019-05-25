@@ -108,11 +108,19 @@ class Message {
         /** RECLAIM Protocol:
           --RECLAIM <file_id>
         */
-        } else if(this.type.equals("RECLAIM")) {
+        } else if(this.type.equals("B_RECLAIM")) {
             this.peer_id = Integer.parseInt(message_parts[1]);
             this.file_id = message_parts[2];
             this.rep_degree = Integer.parseInt(message_parts[3]);
             this.port = Integer.parseInt(message_parts[4]);
+
+        } else if(this.type.equals("RECLAIM")) {
+            this.peer_id = Integer.parseInt(message_parts[1]);
+            this.rep_degree = Integer.parseInt(message_parts[2]);
+        
+        } else if(this.type.equals("RECLAIM_M")) {
+            this.peer_id = Integer.parseInt(message_parts[1]);
+            this.rep_degree = Integer.parseInt(message_parts[2]);
 
         /** Manager Messages 
             MANAGER_JOIN <address> <port>
@@ -199,6 +207,10 @@ class Message {
         } else if(this.type.equals("DELETED")){
             message= this.type + " " + this.peer_id + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
         } else if(this.type.equals("RECLAIM")) {
+            message = this.type + " " + this.peer_id + " " + this.rep_degree + " \r\n\r\n";
+        } else if(this.type.equals("RECLAIM_M")) {
+            message = this.type + " " + this.peer_id + " " + this.rep_degree + " \r\n\r\n";
+        } else if(this.type.equals("B_RECLAIM")) {
             message = this.type + " " + this.peer_id + " " + this.file_id + " " + this.rep_degree + " " + this.port + " \r\n\r\n";
         } else if(this.type.equals("MANAGER_JOIN")) {
             message = this.type + " " + this.address + " " + this.port + " \r\n\r\n";
