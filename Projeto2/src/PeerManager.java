@@ -155,7 +155,7 @@ public class PeerManager {
                     message_data = buffer.toByteArray();
                     Message peer_msg = new Message(message_data);
                     PeerInfo new_peer = new PeerInfo(peer_msg.get_peer_id(), peer_msg.get_port(), peer_msg.get_address());
-                    new_peer.set_count_files(peer_msg.get_rep_degree());
+                    new_peer.set_free_space(peer_msg.get_rep_degree());
                     this.peers.put(peer_msg.get_peer_id(), new_peer);
                     socket.getOutputStream().write(ack_msg.getBytes());
                     if(n == count - 1)

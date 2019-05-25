@@ -40,6 +40,7 @@ public class SaveFile {
     SaveFile(int peer_id, String file_name, String protocol, ArrayList<byte[]> file) {
         String[] parts = file_name.split("/");
         String file_to_write = parts[parts.length-1];
+        this.body = file;
 
         File peer_dir = new File("peer" + peer_id);
         if(!peer_dir.exists()) {

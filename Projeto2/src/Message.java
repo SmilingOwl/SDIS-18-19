@@ -55,6 +55,7 @@ class Message {
         }else if(this.type.equals("BACKUP")){
            this.peer_id = Integer.parseInt(message_parts[1]);
            this.rep_degree = Integer.parseInt(message_parts[2]);
+           this.port = Integer.parseInt(message_parts[3]);
 
         }else if(this.type.equals("AVAILABLE")){  
             PeerInfo peer;
@@ -71,6 +72,7 @@ class Message {
         } else if(this.type.equals("STORED")){
             this.peer_id = Integer.parseInt(message_parts[1]);
             this.file_id = message_parts[2];
+            this.rep_degree = Integer.parseInt(message_parts[3]);
 
         /** RESTORE Protocol:
               --RESTORE <file_id> <CRLF><CRLF>
@@ -97,6 +99,20 @@ class Message {
         } else if(this.type.equals("DELETED")){
             this.peer_id = Integer.parseInt(message_parts[1]);
             this.file_id = message_parts[2];
+            this.rep_degree = Integer.parseInt(message_parts[3]);
+        } else if(this.type.equals("DELETED_M")){
+            this.peer_id = Integer.parseInt(message_parts[1]);
+            this.file_id = message_parts[2];
+            this.rep_degree = Integer.parseInt(message_parts[3]);
+
+        /** RECLAIM Protocol:
+          --RECLAIM <file_id>
+        */
+        } else if(this.type.equals("RECLAIM")) {
+            this.peer_id = Integer.parseInt(message_parts[1]);
+            this.file_id = message_parts[2];
+            this.rep_degree = Integer.parseInt(message_parts[3]);
+            this.port = Integer.parseInt(message_parts[4]);
 
         /** Manager Messages 
             MANAGER_JOIN <address> <port>
@@ -138,6 +154,7 @@ class Message {
         } else if(this.type.equals("STORED_M")){
             this.peer_id = Integer.parseInt(message_parts[1]);
             this.file_id = message_parts[2];
+            this.rep_degree = Integer.parseInt(message_parts[3]);
         } else if(this.type.equals("ACTIVE")) {
             this.peer_id = Integer.parseInt(message_parts[1]);
         } else if(this.type.equals("ACTIVE_M")) {
@@ -156,7 +173,7 @@ class Message {
             message = this.type + " " + this.peer_id +
             " " + this.address + " " + this.port + " \r\n\r\n";        
         } else if(this.type.equals("BACKUP")){
-            message = this.type + " " + this.peer_id + " " + this.rep_degree + " \r\n\r\n";
+            message = this.type + " " + this.peer_id + " " + this.rep_degree + " " + this.port + " \r\n\r\n";
         } else if(this.type.equals("AVAILABLE")){
             String message_ini = this.type + " ";
             String message_end ="\r\n\r\n";
@@ -170,7 +187,7 @@ class Message {
         } else if(this.type.equals("P2P_BACKUP")){
             message= this.type + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
         } else if(this.type.equals("STORED")){
-            message= this.type +  " " + this.peer_id + " " + this.file_id + " \r\n\r\n";
+            message= this.type +  " " + this.peer_id + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
         } else if(this.type.equals("RESTORE")){
             message= this.type + " " + this.peer_id + " " + this.file_id + " \r\n\r\n";
         } else if(this.type.equals("P2P_RESTORE")){
@@ -180,7 +197,9 @@ class Message {
         } else if(this.type.equals("DELETE")){
             message= this.type + " " + this.file_id + " \r\n\r\n";
         } else if(this.type.equals("DELETED")){
-            message= this.type + " " + this.peer_id + " " + this.file_id + " \r\n\r\n";
+            message= this.type + " " + this.peer_id + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
+        } else if(this.type.equals("RECLAIM")) {
+            message = this.type + " " + this.peer_id + " " + this.file_id + " " + this.rep_degree + " " + this.port + " \r\n\r\n";
         } else if(this.type.equals("MANAGER_JOIN")) {
             message = this.type + " " + this.address + " " + this.port + " \r\n\r\n";
         } else if(this.type.equals("MANAGER_ADD")) {
@@ -212,7 +231,9 @@ class Message {
 
             message = message_ini + message_middle + message_end;
         } else if(this.type.equals("STORED_M")){
-            message= this.type +  " " + this.peer_id + " " + this.file_id + " \r\n\r\n";
+            message= this.type +  " " + this.peer_id + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
+        } else if(this.type.equals("DELETED_M")){
+            message= this.type + " " + this.peer_id + " " + this.file_id + " " + this.rep_degree + " \r\n\r\n";
         } else if(this.type.equals("ACTIVE")) {
             message = this.type + " " + this.peer_id + " \r\n\r\n";
         } else if(this.type.equals("ACTIVE_M")) {

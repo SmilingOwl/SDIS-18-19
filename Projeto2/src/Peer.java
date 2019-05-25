@@ -28,6 +28,8 @@ public class Peer implements RemoteInterface {
     private SSLContext context;
     private ArrayList<PeerManagerInfo> managers;
     private int current_manager;
+    private int maxFreeSpace = 100000000;
+    private int free_space;
 
     public Peer(int id, String remote_object_name, int port, String manager_address, int manager_port) {
         this.id = id;
@@ -39,6 +41,7 @@ public class Peer implements RemoteInterface {
         PeerManagerInfo manager = new PeerManagerInfo(this.manager_port, this.manager_address);
         this.managers.add(manager);
         this.current_manager = 0;
+        this.free_space = this.maxFreeSpace;
         this.thread_executor = new ScheduledThreadPoolExecutor(3000);
 
         try{
@@ -175,6 +178,26 @@ public class Peer implements RemoteInterface {
         return this.context;
     }
 
+    public int get_occupied_space(){
+        int occupied_space = 0;
+        File backup_dir = new File("peer" + this.id + "/backup");
+        if(backup_dir.exists()) {
+            File[] backed_up_files = backup_dir.listFiles(); 
+            for (int i = 0; i < backed_up_files.length; i++) {
+                occupied_space += (int) backed_up_files[i].length();
+            }
+        }
+        return occupied_space;
+    }
+
+    public int get_free_space() {
+        return this.free_space;
+    }
+
+    public void add_to_free_space(int occupied) {
+        this.free_space += occupied;
+    }
+
     public void switch_manager() {
         this.current_manager++;
         if(this.current_manager >= this.managers.size()) {
@@ -188,17 +211,24 @@ public class Peer implements RemoteInterface {
 
     public synchronized String backup_file(String file_name, int rep_degree) throws RemoteException {
         this.thread_executor.execute(new BackupThread(file_name, rep_degree, this));
-        return "Backup executed successfully.";
+        return "Initiated BACKUP protocol.";
     }
 
     public String restore_file(String file_name) throws RemoteException {
         this.thread_executor.execute(new RestoreThread(file_name, this));
-        return "File restored successfully.";
+        return "Initiated RESTORE protocol.";
     }
     
     public String delete_file(String file_name) throws RemoteException {
         this.thread_executor.execute(new DeleteThread(file_name, this));
-        return "File deleted successfully.";
+        return "Intitiated DELETE protocol.";
+    }
+
+    public String reclaim(int max_ammount) throws RemoteException {
+        this.maxFreeSpace = max_ammount;
+        this.free_space = this.maxFreeSpace - this.get_occupied_space();
+        this.thread_executor.execute(new ReclaimThread(this));
+        return "Initiated RECLAIM protocol.";
     }
     
     /************************** Main function **************************/

@@ -31,6 +31,7 @@ public class PeerMessageHandler implements Runnable {
         System.out.println("\nReceived backup request.");
         String file_id = this.message.get_file_id();
         int num_chunks = this.message.get_rep_degree();
+        int occupied = 0;
         ArrayList<byte[]> body = new ArrayList<byte[]>();
         String ready_msg = "READY";
         String ack_msg = "ACK";
@@ -45,6 +46,7 @@ public class PeerMessageHandler implements Runnable {
                 buffer.write(data, 0, nRead);
                 byte[] message_data = buffer.toByteArray();
                 body.add(message_data);
+                occupied += message_data.length;
                 socket.getOutputStream().write(ack_msg.getBytes());
                 if(n == num_chunks-1)
                     break;
@@ -56,7 +58,7 @@ public class PeerMessageHandler implements Runnable {
             System.out.println("Error writing to socket.");
         }
         new SaveFile(this.owner.get_id(), file_id, "backup", body);
-        Message message = new Message("STORED", this.owner.get_id(), file_id, -1, null, null, -1, null);
+        Message message = new Message("STORED", this.owner.get_id(), file_id, this.owner.get_free_space(), null, null, -1, null);
         int i = 0;
         while(i < this.owner.get_managers().size()){
             try {
@@ -106,15 +108,23 @@ public class PeerMessageHandler implements Runnable {
     }
 
     public void delete_request() {
-        System.out.println("\nReceived restore request.");
+        System.out.println("\nReceived delete request.");
         String file_id = this.message.get_file_id();
-                
-        try {
-            this.owner.get_files().remove(file_id);
-        } catch (Exception ex) {
-            System.out.println("Error writing to socket.");
+        int occupied = 0;
+
+        File file_dir = new File("peer" + this.owner.get_id() + "/backup/" + file_id);
+        if(!file_dir.exists()) {
+            System.out.println("Trying to delete file. File directory doesn't exist.");
+            return;
         }
-        Message message = new Message("DELETED", this.owner.get_id(), file_id, -1, null, null, -1, null);
+        else{
+            occupied = (int) file_dir.length();
+            file_dir.delete();
+        }
+                
+        this.owner.add_to_free_space(occupied);
+        
+        Message message = new Message("DELETED", this.owner.get_id(), file_id, this.owner.get_free_space(), null, null, -1, null);
         int i = 0;
         while(i < this.owner.get_managers().size()){
             try {
@@ -130,15 +140,6 @@ public class PeerMessageHandler implements Runnable {
         }
         if(i == this.owner.get_managers().size()) {
             System.out.println("Couldn't connect to any server.");
-        }
-
-        File file_dir = new File("peer" + this.owner.get_id() + "/backup/" + file_id);
-        if(!file_dir.exists()) {
-            System.out.println("Trying to delete file. File directory doesn't exist.");
-            return;
-        }
-        else{
-            file_dir.delete();
         }
     }
 
