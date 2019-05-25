@@ -124,6 +124,11 @@ public class SaveFile {
                 @Override
                 public void completed(Integer result, ByteBuffer attachment) {
                     System.out.println("Successfully wrote to file.");
+                    try {
+                        file_channel.close();
+                    } catch (Exception ex) {
+                        System.out.println("Error closing file.");
+                    }
                 }
 
                 @Override
@@ -131,7 +136,6 @@ public class SaveFile {
                     System.out.println("Error writing to file.");
                 }
             }); 
-            file_channel.close();
         } catch (Exception ex) {
             System.out.println("Error writing to file.");
         }
