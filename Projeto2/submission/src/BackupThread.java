@@ -16,8 +16,12 @@ public class BackupThread implements Runnable {
 
     public void run() {
         SaveFile file = new SaveFile(file_name, rep_degree);
+        int occupied = 0;
+        for(int i = 0; i < file.get_body().size(); i++) {
+            occupied += file.get_body().get(i).length;
+        }
         this.owner.get_files().put(file_name, file);
-        Message to_manager = new Message("BACKUP", this.owner.get_id(), null, this.rep_degree, null, null, -1, null);
+        Message to_manager = new Message("BACKUP", this.owner.get_id(), null, this.rep_degree, null, null, occupied, null);
         Message manager_answer = this.backup_request_manager(to_manager);
         ArrayList<PeerInfo> address_list = manager_answer.get_peers();
         for(int i = 0; i < address_list.size(); i++) {
@@ -43,6 +47,7 @@ public class BackupThread implements Runnable {
                 int nRead = stream.read(data, 0, data.length);
                 buffer.write(data, 0, nRead);
                 byte[] message_data = buffer.toByteArray();
+                System.out.println("\nReceived message: " + new String(message_data));
                 received_message = new Message(message_data);
                 socket.close();
                 break;
@@ -79,7 +84,7 @@ public class BackupThread implements Runnable {
                     istream.read(data, 0, data.length);
                     String ack = new String(data);
                     if(!ack.equals("ACK")) {
-                        System.out.println("Error sending backup request.");
+                        System.out.println("Error sending backup request from failed ACK.");
                         break;
                     }
                 }
@@ -88,6 +93,7 @@ public class BackupThread implements Runnable {
             socket.close();
         } catch(Exception ex) {
             System.out.println("Error sending backup request to peer.");
+            ex.printStackTrace();
         }
     }
 }

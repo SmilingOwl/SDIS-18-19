@@ -31,7 +31,15 @@ public class ManagerMessageHandler implements Runnable {
         } else if (this.message.get_type().equals("DELETE")) {
             this.delete_request();
         } else if (this.message.get_type().equals("DELETED")) {
-            this.deleted_message();
+            this.deleted_message(false);
+        } else if (this.message.get_type().equals("DELETED_M")) {
+            this.deleted_message(true);
+        } else if (this.message.get_type().equals("RECLAIM")) {
+            this.reclaim_message(false);
+        } else if (this.message.get_type().equals("RECLAIM_M")) {
+            this.reclaim_message(true);
+        } else if (this.message.get_type().equals("B_RECLAIM")) {
+            this.reclaim_request();
         } else if (this.message.get_type().equals("MANAGER_ADD")) {
             this.manager_add();
         } else if (this.message.get_type().equals("MANAGER_JOIN")) {
@@ -88,7 +96,8 @@ public class ManagerMessageHandler implements Runnable {
         System.out.println("\nReceived backup request.");
         int peer_id = this.message.get_peer_id();
         int rep_degree = message.get_rep_degree();
-        ArrayList<PeerInfo> peers = get_peers_with_fewer_files(rep_degree, peer_id);
+        int occupied = message.get_port();
+        ArrayList<PeerInfo> peers = get_peers_more_space(rep_degree, peer_id, occupied);
         Message message = new Message("AVAILABLE", -1, null, rep_degree, null, null, -1, peers);
         try {
             socket.getOutputStream().write(message.build());
@@ -101,9 +110,11 @@ public class ManagerMessageHandler implements Runnable {
     private void stored_message(boolean sent_by_manager) {
         int peer_id = message.get_peer_id();
         String file_id = message.get_file_id();
+        int free_space = message.get_rep_degree();
         ArrayList<Integer> peers_backing_up_file = this.owner.get_files().get(file_id);
         PeerInfo peer_info = this.owner.get_peers().get(peer_id);
         peer_info.increase_count_files();
+        peer_info.set_free_space(free_space);
         if(peers_backing_up_file == null) {
             ArrayList<Integer> new_peers = new ArrayList<Integer>();
             new_peers.add(peer_id);
@@ -159,22 +170,63 @@ public class ManagerMessageHandler implements Runnable {
         }
     }
 
-    private void deleted_message() {
+    private void deleted_message(boolean sent_by_manager) {
 
         String file_id = this.message.get_file_id();
         int peer_id= this.message.get_peer_id();
+        int free_space = this.message.get_rep_degree();
+        PeerInfo peer_info = this.owner.get_peers().get(peer_id);
+        peer_info.decrease_count_files();
+        peer_info.set_free_space(free_space);
         
         if(this.owner.get_files().get(file_id)!= null){
             for(int i=0; i< this.owner.get_files().get(file_id).size(); i++){
                 if(this.owner.get_files().get(file_id).get(i) == peer_id ){
-                    this.owner.get_files().get(file_id).remove(peer_id);
+                    this.owner.get_files().get(file_id).remove(i);
+                    i--;
                 }
             }
             if(this.owner.get_files().get(file_id).size() == 0){
                 this.owner.get_files().remove(file_id);
             }
         }
+        if(!sent_by_manager){
+            for (int i = 0; i < this.owner.get_managers().size(); i++) {
+                this.message.set_type("DELETED_M");
+                SendMessage redirect_message = new SendMessage(this.owner.get_managers().get(i).get_address(),
+                    this.owner.get_managers().get(i).get_port(), this.message, this.owner.get_context().getSocketFactory());
+                    redirect_message.run();
+            }
+        }
+    }
 
+    private void reclaim_message(boolean sent_by_manager) {
+        int peer_id = this.message.get_peer_id();
+        int free_space = this.message.get_rep_degree();
+        PeerInfo peer_info = this.owner.get_peers().get(peer_id);
+        peer_info.set_free_space(free_space);
+
+        if(!sent_by_manager){
+            for (int i = 0; i < this.owner.get_managers().size(); i++) {
+                this.message.set_type("RECLAIM_M");
+                SendMessage redirect_message = new SendMessage(this.owner.get_managers().get(i).get_address(),
+                    this.owner.get_managers().get(i).get_port(), this.message, this.owner.get_context().getSocketFactory());
+                    redirect_message.run();
+            }
+        }
+    }
+
+    private void reclaim_request() {
+        String file_id = this.message.get_file_id();
+        int occupied = this.message.get_rep_degree();
+        ArrayList<PeerInfo> peers = get_peers_without_file(file_id, occupied);
+        Message message = new Message("AVAILABLE", -1, null, -1, null, null, -1, peers);
+        try {
+            socket.getOutputStream().write(message.build());
+            System.out.println("Sent available message.");
+        } catch(Exception ex) {
+            System.out.println("Error writing to socket.");
+        }
     }
 
     private void manager_add() {
@@ -193,7 +245,7 @@ public class ManagerMessageHandler implements Runnable {
             this.socket.getOutputStream().write(peer_info.build());
             for(Integer peer_id : this.owner.get_peers().keySet()) {
                 PeerInfo peer = this.owner.get_peers().get(peer_id);
-                Message peer_msg = new Message("PEER", peer_id, null, peer.get_count_files(), null, peer.get_address(), peer.get_port(), null);
+                Message peer_msg = new Message("PEER", peer_id, null, peer.get_free_space(), null, peer.get_address(), peer.get_port(), null);
                 this.socket.getOutputStream().write(peer_msg.build());
                 InputStream istream = socket.getInputStream();
                 byte[] data = new byte[3];
@@ -248,7 +300,7 @@ public class ManagerMessageHandler implements Runnable {
     }
 
     /*************** Auxiliary Functions ***************/
-    private ArrayList<PeerInfo> get_peers_with_fewer_files(int rep_degree, int peer_id) {
+    private ArrayList<PeerInfo> get_peers_more_space(int rep_degree, int peer_id, int occupied) {
         ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
         int max_peers = rep_degree;
         if(this.owner.get_peers().size() - 1 < rep_degree) {
@@ -256,21 +308,34 @@ public class ManagerMessageHandler implements Runnable {
         }
 
         while(peers.size() < max_peers) {
-            int min = Integer.MAX_VALUE;
-            PeerInfo min_peer = null;
+            int max = Integer.MIN_VALUE;
+            PeerInfo max_peer = null;
             for(PeerInfo available_peer : this.owner.get_peers().values()) {
                 if(available_peer.get_id() != peer_id && !peers.contains(available_peer)) {
-                    if(available_peer.get_count_files() < min) {
-                        min_peer = available_peer;
-                        min = available_peer.get_count_files();
+                    if(available_peer.get_free_space() > max && available_peer.get_free_space() > occupied) {
+                        max_peer = available_peer;
+                        max = available_peer.get_free_space();
                     }
                 }
             }
-            if(min_peer == null) {
-                System.out.println("Error: On getting fewer files.");
+            if(max_peer == null) {
+                System.out.println("Error: couldn't get enough peers with space.");
                 break;
             }
-            peers.add(min_peer);
+            peers.add(max_peer);
+        }
+
+        return peers;
+    }
+
+    private ArrayList<PeerInfo> get_peers_without_file(String file_id, int occupied) {
+        ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
+        ArrayList<Integer> peers_with_file = this.owner.get_files().get(file_id);
+
+        for(Integer peer_id : this.owner.get_peers().keySet()) {
+            if(!peers_with_file.contains(peer_id) && this.owner.get_peers().get(peer_id).get_free_space() > occupied) {
+                peers.add(this.owner.get_peers().get(peer_id));
+            }
         }
 
         return peers;
