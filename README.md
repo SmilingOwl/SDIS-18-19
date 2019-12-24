@@ -1,6 +1,6 @@
 # SDIS 2018/2019
 
-Curricular Unity: SDIS - Distributed Systems
+Curricular Unity: SDIS - Distributed Systems <br>
 Lective Year: 2018/2019
 
 
@@ -34,8 +34,8 @@ The system supports the following actions:
 * **Restore files** - The initiator peer tells the peer manager that it wants to restore a file, to which the peer manager responds with the contacts of the peers that hold the file. The initiator peer proceeds to communicate with the peer to receive the file.
 * **Delete files** - The initiator peer informs the peer manager that he wants to delete a file, to which the peer manager responds with the contacts of all peers that hold the file. The initiator peer sends a message to each one asking for the file to be deleted.
 
-**Concurrency** is achieved using thread-pools and non-blocking I/O operations, using *java.nio*.
-**Secure communication** is achieved using JSSE.
+**Concurrency** is achieved using thread-pools and non-blocking I/O operations, using *java.nio*.<br>
+**Secure communication** is achieved using JSSE.<br>
 **Fault Tolerance** - We covered the following scenarios:
 * **Peer Manager Failure**: Every Peer holds the contacts of every Peer Manager available in the system. When a Peer Manager fails, the Peer connects to another one.
 * **Peer General Failure**: The Peer Managers check every once in a while whether or not a Peer is still active. When it's not, the Peer Managers delete all the Peer's information. When the Peer comes back, it informs the Peer Managers about all the files that it has stored.
